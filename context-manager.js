@@ -28,17 +28,17 @@ const ContextManager = {
 
   // Render context pills inline in the input header
   renderContextPillsInline: function() {
-    if (!this.contextPillsInline) return;
-    
-    // Clear existing pills
-    this.contextPillsInline.innerHTML = '';
-    
-    const hasContent = this.emailContext.length > 0 || this.contactsContext.length > 0 || this.textSelectionContext.length > 0;
-    
-    if (!hasContent) {
-      return; // No pills to show
-    }
-    
+    // Pills are now rendered as direct siblings to the button in .context-btn-container
+    const btnContainer = document.getElementById('contextBtnContainer');
+    if (!btnContainer) return;
+
+    // Remove all existing pills (but not the button or dropdown)
+    Array.from(btnContainer.querySelectorAll('.context-pill-inline')).forEach(el => el.remove());
+
+    // Find the button (should always be first)
+    const addBtn = btnContainer.querySelector('.add-context-btn');
+    let insertAfter = addBtn;
+
     // Render email pills
     this.emailContext.forEach((email, index) => {
       const subject = email.subject || '(No Subject)';
@@ -48,10 +48,11 @@ const ContextManager = {
         truncatedSubject,
         () => this.removeEmail(index)
       );
-      pill.title = `Email: ${subject}`; // Full text on hover
-      this.contextPillsInline.appendChild(pill);
+      pill.title = `Email: ${subject}`;
+      insertAfter.insertAdjacentElement('afterend', pill);
+      insertAfter = pill;
     });
-    
+
     // Render contacts pill (single pill for all contacts)
     if (this.contactsContext.length > 0) {
       const contactText = `${this.contactsContext.length} contact${this.contactsContext.length > 1 ? 's' : ''}`;
@@ -61,9 +62,10 @@ const ContextManager = {
         () => this.removeContacts()
       );
       pill.title = `Contacts: ${contactText}`;
-      this.contextPillsInline.appendChild(pill);
+      insertAfter.insertAdjacentElement('afterend', pill);
+      insertAfter = pill;
     }
-    
+
     // Render text selection pills
     this.textSelectionContext.forEach((selection, index) => {
       const shortText = selection.text.length > 8 ? 
@@ -75,7 +77,8 @@ const ContextManager = {
         () => this.removeTextSelection(index)
       );
       pill.title = `Selection: "${selection.text}" from ${selection.source}`;
-      this.contextPillsInline.appendChild(pill);
+      insertAfter.insertAdjacentElement('afterend', pill);
+      insertAfter = pill;
     });
   },
 
@@ -85,8 +88,15 @@ const ContextManager = {
     pill.className = `context-pill-inline pill-${type}`;
     
     const icon = document.createElement('span');
-    icon.className = 'context-pill-inline-icon';
-    icon.textContent = type === 'email' ? '✉' : type === 'contacts' ? '⚇' : '▢';
+    icon.className = 'material-icons context-pill-inline-icon';
+    icon.style.fontSize = '16px';
+    if (type === 'email') {
+      icon.textContent = 'mail';
+    } else if (type === 'contacts') {
+      icon.textContent = 'contacts';
+    } else {
+      icon.textContent = 'text_snippet';
+    }
     
     const labelSpan = document.createElement('span');
     labelSpan.className = 'context-pill-inline-label';
@@ -94,8 +104,20 @@ const ContextManager = {
     
     const removeBtn = document.createElement('button');
     removeBtn.className = 'context-pill-inline-remove';
-    removeBtn.textContent = '×';
     removeBtn.title = 'Remove from context';
+    removeBtn.style.display = 'flex';
+    removeBtn.style.alignItems = 'center';
+    removeBtn.style.justifyContent = 'center';
+    removeBtn.style.background = 'none';
+    removeBtn.style.border = 'none';
+    removeBtn.style.padding = '0';
+    removeBtn.style.marginLeft = '2px';
+    removeBtn.style.cursor = 'pointer';
+    const removeIcon = document.createElement('span');
+    removeIcon.className = 'material-icons';
+    removeIcon.style.fontSize = '16px';
+    removeIcon.textContent = 'close';
+    removeBtn.appendChild(removeIcon);
     removeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       onRemove();
