@@ -21,9 +21,9 @@
     "notifications",
     "https://api.openai.com/*"
   ],
-  "sidebar_action": {
+  "browser_action": {
     "default_title": "Copilot",
-    "default_panel": "sidebar.html",
+    "default_popup": "sidebar.html",
     "default_icon": "icons/icon-48.png"
   },
   "options_ui": {
