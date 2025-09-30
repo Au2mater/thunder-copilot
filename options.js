@@ -78,7 +78,7 @@ saveBtn.addEventListener('click', async () => {
     if (apiKey) {
       showStatus('✅ API key saved successfully! You can now use AI features.', 'success');
     } else {
-      showStatus('🗑️ API key cleared.', 'success');
+      showStatus('🗑 API key cleared.', 'success');
     }
     
     updateKeyIndicator();

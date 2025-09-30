@@ -1,16 +1,17 @@
 <!doctype html>
 <html>
+
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="utf-8" />
   <title>Copilot</title>
   <style>
     * {
       box-sizing: border-box;
     }
-    
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-      margin: 0; 
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
       padding: 0;
       width: 400px;
       min-height: 500px;
@@ -18,8 +19,11 @@
       display: flex;
       flex-direction: column;
       background: #f8f9fa;
+      overflow-x: hidden;
+      /* Prevent horizontal scroll on body */
+      box-sizing: border-box;
     }
-    
+
     /* Chat container */
     .chat-container {
       flex: 1;
@@ -28,96 +32,287 @@
       padding: 16px;
       min-height: 450px;
       overflow: hidden;
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
     }
-    
+
+    /* Content area (messages + quick actions + pills) */
+    .chat-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin-bottom: 100px;
+      /* Reduced since pills are now inline */
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     /* Chat messages area */
     .chat-messages {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
+      /* Prevent horizontal scroll */
       margin-bottom: 16px;
       padding: 0;
       min-height: 200px;
-      max-height: 300px;
+      max-height: none;
+      /* Remove max-height to let it grow */
+      position: relative;
+      width: 100%;
+      /* Ensure full width */
     }
-    
+
+    .chat-header {
+      position: sticky;
+      top: 0;
+      background: rgba(248, 249, 250, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e1e5e9;
+      padding: 8px 12px;
+      margin: 0 -12px 12px -12px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .chat-header.visible {
+      display: flex;
+    }
+
+    .clear-chat-btn {
+      background: none;
+      border: 1px solid #e1e5e9;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s;
+    }
+
+    .clear-chat-btn:hover {
+      background: #f8f9fa;
+      color: #333;
+    }
+
     .message {
       margin-bottom: 16px;
       padding: 12px 16px;
       border-radius: 12px;
-      max-width: 85%;
+      max-width: calc(85% - 8px);
+      /* Account for margins/padding */
       word-wrap: break-word;
+      word-break: break-word;
+      /* Force long words to break */
       line-height: 1.4;
+      box-sizing: border-box;
     }
-    
+
     .message.user {
       background: #007AFF;
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 4px;
     }
-    
+
     .message.assistant {
       background: white;
       color: #000;
       border: 1px solid #e1e5e9;
       border-bottom-left-radius: 4px;
     }
-    
+
     /* Input area */
     .input-container {
       background: white;
       border-radius: 20px;
       border: 1px solid #e1e5e9;
-      position: relative;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 10;
     }
-    
+
     .input-header {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      justify-content: flex-start;
+      align-items: flex-end;
       padding: 8px 16px;
       border-bottom: 1px solid #f0f0f0;
       background: #f8f9fa;
       border-radius: 20px 20px 0 0;
       position: relative;
+      flex-wrap: wrap;
+      gap: 6px;
     }
-    
-    .context-indicator {
-      font-size: 12px;
-      color: #666;
+
+    .context-area {
       display: flex;
-      align-items: center;
-      gap: 4px;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 1;
     }
-    
+
+    .context-indicator {
+      display: none;
+      /* Remove "No context" text completely */
+    }
+
+    .context-indicator.hidden {
+      display: none;
+    }
+
     .context-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #28a745;
     }
-    
+
+    /* Add context button - now pill-sized and on the left */
     .add-context-btn {
-      background: #007AFF;
-      color: white;
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #1976d2;
       border: none;
       border-radius: 8px;
-      padding: 4px 8px;
+      padding: 6px 18px;
       font-size: 12px;
+      font-weight: 600;
+      color: #fff;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, box-shadow 0.2s;
       position: relative;
+      white-space: nowrap;
+      flex-shrink: 0;
+      max-width: 140px;
+      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
     }
-    
+
     .add-context-btn:hover {
-      background: #0056b3;
+      background: #1565c0;
+      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.16);
     }
-    
+
+    .context-btn-container {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* Inline context pills (smaller versions for input header) */
+    .context-pills-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .context-pill-inline {
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1976d2;
+      transition: all 0.2s;
+      max-width: 120px;
+    }
+
+    .context-pill-inline:hover {
+      background: #bbdefb;
+      border-color: #64b5f6;
+    }
+
+    .context-pill-inline.pill-email {
+      background: #e8f5e8;
+      border-color: #81c784;
+      color: #2e7d32;
+    }
+
+    .context-pill-inline.pill-email:hover {
+      background: #c8e6c9;
+      border-color: #66bb6a;
+    }
+
+    .context-pill-inline.pill-contacts {
+      background: #fff3e0;
+      border-color: #ffb74d;
+      color: #f57c00;
+    }
+
+    .context-pill-inline.pill-contacts:hover {
+      background: #ffe0b2;
+      border-color: #ffa726;
+    }
+
+    .context-pill-inline.pill-selection {
+      background: #f3e5f5;
+      border-color: #ce93d8;
+      color: #7b1fa2;
+    }
+
+    .context-pill-inline.pill-selection:hover {
+      background: #e1bee7;
+      border-color: #ba68c8;
+    }
+
+    .context-pill-inline-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .context-pill-inline-remove {
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      border-radius: 50%;
+      width: 12px;
+      height: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 8px;
+      line-height: 1;
+      color: currentColor;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .context-pill-inline-remove:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .context-pill-inline-icon {
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
     .context-btn-container {
       position: relative;
     }
-    
+
     #prompt {
       width: 100%;
       border: none;
@@ -131,11 +326,11 @@
       background: transparent;
       font-family: inherit;
     }
-    
+
     #prompt::placeholder {
       color: #999;
     }
-    
+
     /* Warning message */
     .api-warning {
       background: #fff3cd;
@@ -146,62 +341,77 @@
       margin-bottom: 16px;
       font-size: 14px;
     }
-    
+
     .api-warning a {
       color: #007AFF;
       text-decoration: none;
       font-weight: 500;
     }
-    
+
     .api-warning a:hover {
       text-decoration: underline;
     }
-    
+
     /* Context dropdown */
     .context-dropdown {
       position: absolute;
       top: calc(100% + 4px);
-      right: 0;
+      left: 0;
       background: white;
       border: 1px solid #e1e5e9;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
       min-width: 150px;
       display: none;
       max-height: 200px;
       overflow-y: auto;
     }
-    
+
     /* When dropdown needs to appear above */
     .context-dropdown.dropdown-up {
       top: auto;
       bottom: calc(100% + 4px);
     }
-    
+
     .context-option {
       padding: 8px 12px;
       cursor: pointer;
       font-size: 14px;
       border-bottom: 1px solid #f0f0f0;
     }
-    
+
     .context-option:last-child {
       border-bottom: none;
     }
-    
+
     .context-option:hover {
       background: #f8f9fa;
     }
-    
+
     /* Quick actions */
     .quick-actions {
       margin-bottom: 16px;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      transition: all 0.3s ease;
+      opacity: 1;
+      max-height: 120px;
+      /* Increased to allow for 2 rows */
+      overflow: hidden;
+      position: relative;
+      z-index: 5;
+      /* Ensure it appears above other content */
     }
-    
+
+    .quick-actions.hidden {
+      opacity: 0;
+      max-height: 0;
+      margin-bottom: 0;
+      padding: 0;
+    }
+
     .quick-action-btn {
       background: #f8f9fa;
       border: 1px solid #e1e5e9;
@@ -213,13 +423,121 @@
       color: #333;
       font-weight: 500;
     }
-    
+
     .quick-action-btn:hover {
       background: #007AFF;
       color: white;
       border-color: #007AFF;
     }
-    
+
+    /* Context pills container */
+    .context-pills-container {
+      margin-bottom: 12px;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 0;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 5;
+      /* Ensure it appears above other content */
+    }
+
+    .context-pills-container.has-pills {
+      padding: 8px 0;
+      border-bottom: 1px solid #e1e5e9;
+      margin-bottom: 16px;
+    }
+
+    /* Individual context pills */
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 12px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1976d2;
+      transition: all 0.2s;
+      max-width: 280px;
+    }
+
+    .context-pill:hover {
+      background: #bbdefb;
+      border-color: #64b5f6;
+    }
+
+    .context-pill.pill-email {
+      background: #e8f5e8;
+      border-color: #81c784;
+      color: #2e7d32;
+    }
+
+    .context-pill.pill-email:hover {
+      background: #c8e6c9;
+      border-color: #66bb6a;
+    }
+
+    .context-pill.pill-contacts {
+      background: #fff3e0;
+      border-color: #ffb74d;
+      color: #f57c00;
+    }
+
+    .context-pill.pill-contacts:hover {
+      background: #ffe0b2;
+      border-color: #ffa726;
+    }
+
+    .context-pill.pill-selection {
+      background: #f3e5f5;
+      border-color: #ce93d8;
+      color: #7b1fa2;
+    }
+
+    .context-pill.pill-selection:hover {
+      background: #e1bee7;
+      border-color: #ba68c8;
+    }
+
+    .context-pill-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .context-pill-remove {
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 1;
+      color: currentColor;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .context-pill-remove:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .context-pill-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
     /* Send button */
     .send-btn {
       position: absolute;
@@ -238,123 +556,99 @@
       font-size: 16px;
       transition: background 0.2s;
     }
-    
+
     .send-btn:hover {
       background: #0056b3;
     }
-    
+
     .send-btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
-    
+
     /* Loading state */
     .loading {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 8px;
       color: #666;
       font-style: italic;
       padding: 12px 16px;
     }
-    
-    .loading-dots {
-      display: inline-flex;
-      gap: 2px;
-    }
-    
-    .loading-dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: #666;
-      animation: loading 1.4s infinite ease-in-out;
-    }
-    
-    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
-    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
-    .loading-dot:nth-child(3) { animation-delay: 0; }
-    
-    @keyframes loading {
-      0%, 80%, 100% { opacity: 0.3; }
-      40% { opacity: 1; }
-    }
-    
-    /* Scrollbar styling */
-    .chat-messages::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .chat-messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .chat-messages::-webkit-scrollbar-thumb {
-      background: #ccc;
-      border-radius: 3px;
-    }
-    
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-      background: #999;
-    }
   </style>
 </head>
+
 <body>
   <div class="chat-container">
-    <!-- API Warning (shown when no API key) -->
-    <div id="apiWarning" class="api-warning" style="display: none;">
-      ⚠️ Please set your OpenAI API key in <a href="#" id="openOptions">Options</a> to use AI features.
-    </div>
-    
-    <!-- Chat Messages Area -->
-    <div class="chat-messages" id="chatMessages">
-      <!-- Messages will be added here dynamically -->
-    </div>
-    
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <button class="quick-action-btn" data-prompt="Draft a professional email">✉️ Draft Email</button>
-      <button class="quick-action-btn" data-prompt="Summarize the current email">📄 Summarize</button>
-      <button class="quick-action-btn" data-prompt="Reply to the current email">↩️ Reply</button>
-      <button class="quick-action-btn" data-prompt="Analyze the selected text">🔍 Analyze Selection</button>
-    </div>
-    
-    <!-- Input Container -->
-    <div class="input-container">
-      <div class="input-header">
-        <div class="context-indicator" id="contextIndicator">
-          <span id="contextText">No context</span>
+    </style>
+    </head>
+
+    <body>
+      <div class="chat-container">
+        <!-- API Warning (shown when no API key) -->
+        <div id="apiWarning" class="api-warning" style="display: none;">
+          ⚠️ Please set your OpenAI API key in <a href="#" id="openOptions">Options</a> to use AI features.
         </div>
-        <div class="context-btn-container">
-          <button class="add-context-btn" id="addContextBtn">Add context ▼</button>
-          <!-- Context dropdown -->
-          <div class="context-dropdown" id="contextDropdown">
-            <div class="context-option" id="addCurrentEmail">Current email</div>
-            <div class="context-option" id="addSelectedEmails" style="display: none;">Selected emails</div>
-            <div class="context-option" id="addContacts">My contacts</div>
-            <div class="context-option" id="addTextSelection">Selected text</div>
-            <div class="context-option" id="browseEmails">Browse emails</div>
+
+        <!-- Chat Content Area -->
+        <div class="chat-content">
+          <!-- Chat Messages Area -->
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-header" id="chatHeader">
+              <span>Conversation</span>
+              <button class="clear-chat-btn" id="clearChatBtn"
+                title="Clear conversation and show quick actions">Clear</button>
+            </div>
+            <!-- Messages will be added here dynamically -->
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <button class="quick-action-btn" data-prompt="Draft a professional email">✉ Draft Email</button>
+            <button class="quick-action-btn" data-prompt="Summarize the current email">⊞ Summarize</button>
+            <button class="quick-action-btn" data-prompt="Reply to the current email">↰ Reply</button>
+            <button class="quick-action-btn" data-prompt="Analyze the selected text">⌕ Analyze Selection</button>
           </div>
         </div>
-      </div>
-      
-      <textarea 
-        id="prompt" 
-        placeholder="Ask me anything about your emails..."
-        rows="1"
-      ></textarea>
-      
-      <button class="send-btn" id="sendBtn" title="Send message">
-        ➤
-      </button>
-    </div>
-  </div>
 
-<!-- Load modules in dependency order -->
-<script src="utils.js"></script>
-<script src="ui-components.js"></script>
-<script src="context-manager.js"></script>
-<script src="ai-integration.js"></script>
-<script src="index.js"></script>
-</body>
+        <!-- Input Container -->
+        <div class="input-container">
+          <div class="input-header">
+            <div class="context-area">
+              <div class="context-btn-container">
+                <button class="add-context-btn" id="addContextBtn">⊕ Context</button>
+                <!-- Context dropdown -->
+                <div class="context-dropdown" id="contextDropdown">
+                  <div class="context-option" id="addCurrentEmail">✉ Current email</div>
+                  <div class="context-option" id="addSelectedEmails" style="display: none;">✉ Selected emails</div>
+                  <div class="context-option" id="addContacts">⚇ My contacts</div>
+                  <div class="context-option" id="addTextSelection">▢ Selected text</div>
+                  <div class="context-option" id="browseEmails">⌕ Browse emails</div>
+                </div>
+              </div>
+              <div class="context-indicator" id="contextIndicator">
+                <span id="contextText">No context</span>
+              </div>
+              <div class="context-pills-inline" id="contextPillsInline">
+                <!-- Inline context pills will be added here dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <textarea id="prompt" placeholder="Ask me anything about your emails..." rows="1"></textarea>
+
+          <button class="send-btn" id="sendBtn" title="Send message">
+            ➤
+          </button>
+        </div>
+      </div>
+
+      <!-- Load modules in dependency order -->
+      <script src="utils.js"></script>
+      <script src="ui-components.js"></script>
+      <script src="context-manager.js"></script>
+      <script src="ai-integration.js"></script>
+      <script src="index.js"></script>
+    </body>
+
 </html>

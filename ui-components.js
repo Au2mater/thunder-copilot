@@ -1,8 +1,8 @@
 // ui-components.js - UI utilities and component creation
 
 const UIComponents = {
-  // Add message to chat
-  addMessageToChat: function(chatMessages, type, content) {
+  // Add message to chat (now supports context tags)
+  addMessageToChat: function(chatMessages, type, content, contextTags = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}`;
     
@@ -17,7 +17,45 @@ const UIComponents = {
       messageDiv.style.fontSize = '12px';
     }
     
-    messageDiv.textContent = content;
+    // Add context tags if provided (for user messages)
+    if (contextTags && contextTags.length > 0 && type === 'user') {
+      const tagsContainer = document.createElement('div');
+      tagsContainer.className = 'message-tags';
+      tagsContainer.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 8px;
+        opacity: 0.8;
+      `;
+      
+      contextTags.forEach(tag => {
+        const tagElement = document.createElement('span');
+        tagElement.className = 'message-tag';
+        tagElement.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          background: rgba(255,255,255,0.2);
+          border: 1px solid rgba(255,255,255,0.3);
+          border-radius: 8px;
+          padding: 2px 6px;
+          font-size: 10px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.9);
+        `;
+        tagElement.title = tag.fullLabel; // Show full text on hover
+        tagElement.innerHTML = `${tag.icon} ${tag.label}`;
+        tagsContainer.appendChild(tagElement);
+      });
+      
+      messageDiv.appendChild(tagsContainer);
+    }
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.textContent = content;
+    messageDiv.appendChild(contentDiv);
+    
     chatMessages.appendChild(messageDiv);
     
     // Scroll to bottom
@@ -156,7 +194,7 @@ ${draftData.body || '(No body content)'}
     `;
     
     const createButton = document.createElement('button');
-    createButton.textContent = '✉️ Create Draft';
+    createButton.textContent = '✉ Create Draft';
     createButton.style.cssText = `
       background: #28a745;
       color: white;
@@ -177,12 +215,12 @@ ${draftData.body || '(No body content)'}
         await onCreateDraft(draftData);
       } finally {
         createButton.disabled = false;
-        createButton.textContent = '✉️ Create Draft';
+        createButton.textContent = '✉ Create Draft';
       }
     });
     
     const previewButton = document.createElement('button');
-    previewButton.textContent = '👁️ Preview';
+    previewButton.textContent = '👁 Preview';
     previewButton.style.cssText = `
       background: #007AFF;
       color: white;

@@ -11,6 +11,7 @@ const ContextManager = {
   contextText: null,
   chatMessages: null,
   addSelectedEmailsBtn: null,
+  contextPillsInline: null,
 
   // Initialize with DOM references
   init: function(domRefs) {
@@ -18,37 +19,175 @@ const ContextManager = {
     this.contextText = domRefs.contextText;
     this.chatMessages = domRefs.chatMessages;
     this.addSelectedEmailsBtn = domRefs.addSelectedEmailsBtn;
+    this.contextPillsInline = domRefs.contextPillsInline;
   },
 
-  // Update context indicator UI
+  // Update context indicator UI and render pills
   updateContextUI: function() {
-    const emailCount = this.emailContext.length;
-    const contactCount = this.contactsContext.length;
-    const selectionCount = this.textSelectionContext.length;
-    const totalItems = emailCount + (contactCount > 0 ? 1 : 0) + selectionCount; // Contacts count as 1 item
+    // Just render inline context pills (no "No context" text needed)
+    this.renderContextPillsInline();
+  },
+
+  // Render context pills inline in the input header
+  renderContextPillsInline: function() {
+    if (!this.contextPillsInline) return;
     
-    if (totalItems === 0) {
-      this.contextText.textContent = 'No context';
-      this.contextIndicator.querySelector('.context-dot')?.remove();
-    } else {
-      const parts = [];
-      if (emailCount > 0) {
-        parts.push(`${emailCount} email${emailCount > 1 ? 's' : ''}`);
-      }
-      if (contactCount > 0) {
-        parts.push(`${contactCount} contacts`);
-      }
-      if (selectionCount > 0) {
-        parts.push(`${selectionCount} selection${selectionCount > 1 ? 's' : ''}`);
-      }
-      this.contextText.textContent = parts.join(', ') + ' in context';
-      
-      if (!this.contextIndicator.querySelector('.context-dot')) {
-        const dot = document.createElement('div');
-        dot.className = 'context-dot';
-        this.contextIndicator.insertBefore(dot, this.contextText);
-      }
+    // Clear existing pills
+    this.contextPillsInline.innerHTML = '';
+    
+    const hasContent = this.emailContext.length > 0 || this.contactsContext.length > 0 || this.textSelectionContext.length > 0;
+    
+    if (!hasContent) {
+      return; // No pills to show
     }
+    
+    // Render email pills
+    this.emailContext.forEach((email, index) => {
+      const subject = email.subject || '(No Subject)';
+      const truncatedSubject = subject.length > 8 ? subject.substring(0, 8) + '...' : subject;
+      const pill = this.createContextPillInline(
+        'email',
+        truncatedSubject,
+        () => this.removeEmail(index)
+      );
+      pill.title = `Email: ${subject}`; // Full text on hover
+      this.contextPillsInline.appendChild(pill);
+    });
+    
+    // Render contacts pill (single pill for all contacts)
+    if (this.contactsContext.length > 0) {
+      const contactText = `${this.contactsContext.length} contact${this.contactsContext.length > 1 ? 's' : ''}`;
+      const pill = this.createContextPillInline(
+        'contacts',
+        contactText,
+        () => this.removeContacts()
+      );
+      pill.title = `Contacts: ${contactText}`;
+      this.contextPillsInline.appendChild(pill);
+    }
+    
+    // Render text selection pills
+    this.textSelectionContext.forEach((selection, index) => {
+      const shortText = selection.text.length > 8 ? 
+        selection.text.substring(0, 8) + '...' : 
+        selection.text;
+      const pill = this.createContextPillInline(
+        'selection',
+        `"${shortText}"`,
+        () => this.removeTextSelection(index)
+      );
+      pill.title = `Selection: "${selection.text}" from ${selection.source}`;
+      this.contextPillsInline.appendChild(pill);
+    });
+  },
+
+  // Create an inline context pill element (smaller version)
+  createContextPillInline: function(type, label, onRemove) {
+    const pill = document.createElement('div');
+    pill.className = `context-pill-inline pill-${type}`;
+    
+    const icon = document.createElement('span');
+    icon.className = 'context-pill-inline-icon';
+    icon.textContent = type === 'email' ? '✉' : type === 'contacts' ? '⚇' : '▢';
+    
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'context-pill-inline-label';
+    labelSpan.textContent = label;
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'context-pill-inline-remove';
+    removeBtn.textContent = '×';
+    removeBtn.title = 'Remove from context';
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onRemove();
+    });
+    
+    pill.appendChild(icon);
+    pill.appendChild(labelSpan);
+    pill.appendChild(removeBtn);
+    
+    return pill;
+  },
+
+  // Remove specific email from context
+  removeEmail: function(index) {
+    if (index >= 0 && index < this.emailContext.length) {
+      const removedEmail = this.emailContext.splice(index, 1)[0];
+      this.updateContextUI();
+      Utils.logger.info('Email removed from context:', removedEmail.subject);
+    }
+  },
+
+  // Remove all contacts from context
+  removeContacts: function() {
+    if (this.contactsContext.length > 0) {
+      const count = this.contactsContext.length;
+      this.contactsContext = [];
+      this.updateContextUI();
+      Utils.logger.info('Contacts removed from context:', count);
+    }
+  },
+
+  // Remove specific text selection from context
+  removeTextSelection: function(index) {
+    if (index >= 0 && index < this.textSelectionContext.length) {
+      const removedSelection = this.textSelectionContext.splice(index, 1)[0];
+      this.updateContextUI();
+      Utils.logger.info('Text selection removed from context:', removedSelection.text.substring(0, 50));
+    }
+  },
+
+  // Get current context as tags for message attachment
+  getCurrentContextTags: function() {
+    const tags = [];
+    
+    // Add email tags
+    this.emailContext.forEach(email => {
+      const subject = email.subject || '(No Subject)';
+      const truncatedSubject = subject.length > 10 ? subject.substring(0, 10) + '...' : subject;
+      tags.push({
+        type: 'email',
+        label: truncatedSubject,
+        fullLabel: subject,
+        icon: '✉'
+      });
+    });
+    
+    // Add contacts tag
+    if (this.contactsContext.length > 0) {
+      const contactText = `${this.contactsContext.length} contact${this.contactsContext.length > 1 ? 's' : ''}`;
+      tags.push({
+        type: 'contacts',
+        label: contactText,
+        fullLabel: contactText,
+        icon: '⚇'
+      });
+    }
+    
+    // Add text selection tags
+    this.textSelectionContext.forEach(selection => {
+      const shortText = selection.text.length > 10 ? 
+        selection.text.substring(0, 10) + '...' : 
+        selection.text;
+      tags.push({
+        type: 'selection',
+        label: `"${shortText}"`,
+        fullLabel: `"${selection.text}" from ${selection.source}`,
+        icon: '▢'
+      });
+    });
+    
+    return tags;
+  },
+
+  // Clear all context after message is sent
+  clearAllContext: function() {
+    this.emailContext = [];
+    this.contactsContext = [];
+    this.textSelectionContext = [];
+    this.updateContextUI();
+    Utils.logger.info('All context cleared after message sent');
   },
 
   // Check for selected emails and show/hide the option
@@ -96,20 +235,14 @@ const ContextManager = {
           
           this.updateContextUI();
           Utils.logger.info('Email added to context:', m.subject);
-          
-          // Show success message in chat
-          UIComponents.addMessageToChat(this.chatMessages, 'system', `✅ Added email "${m.subject}" to context`);
         } else {
           Utils.logger.warn('Email already in context:', m.subject);
-          UIComponents.addMessageToChat(this.chatMessages, 'system', `⚠️ Email "${m.subject}" is already in context`);
         }
       } else {
         Utils.logger.warn('Failed to add email to context:', r.error);
-        UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ No email currently displayed: ${r.error}`);
       }
     } catch (error) {
       Utils.logger.error('Error adding current email to context:', error);
-      UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Error: ${error.message}`);
     }
   },
 
@@ -123,14 +256,11 @@ const ContextManager = {
         this.contactsContext = r.contacts;
         this.updateContextUI();
         Utils.logger.info('Contacts added to context:', this.contactsContext.length);
-        UIComponents.addMessageToChat(this.chatMessages, 'system', `✅ Added ${this.contactsContext.length} contacts to context`);
       } else {
         Utils.logger.warn('Failed to add contacts to context:', r.error);
-        UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Failed to load contacts: ${r.error}`);
       }
     } catch (error) {
       Utils.logger.error('Error adding contacts to context:', error);
-      UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Error: ${error.message}`);
     }
   },
 
@@ -214,18 +344,14 @@ const ContextManager = {
           this.updateContextUI();
           
           Utils.logger.info('Text selection added to context:', result.selectedText.substring(0, 50) + '...');
-          UIComponents.addMessageToChat(this.chatMessages, 'system', `✅ Added selected text: "${result.selectedText.substring(0, 50)}${result.selectedText.length > 50 ? '...' : ''}" from ${result.source}`);
         } else {
           Utils.logger.warn('No text selected:', result.error);
-          UIComponents.addMessageToChat(this.chatMessages, 'system', `⚠️ ${result.error}. Please select some text first.`);
         }
       } else {
         Utils.logger.error('Failed to execute selection script');
-        UIComponents.addMessageToChat(this.chatMessages, 'system', '❌ Failed to capture text selection');
       }
     } catch (error) {
       Utils.logger.error('Error adding text selection to context:', error);
-      UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Error: ${error.message}`);
     }
   },
 
@@ -237,14 +363,12 @@ const ContextManager = {
       const result = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
       
       if (!result || !result.ok) {
-        UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Failed to get selected emails: ${result?.error || 'Unknown error'}`);
         return;
       }
       
       const selectedEmails = result.messages || [];
       
       if (selectedEmails.length === 0) {
-        UIComponents.addMessageToChat(this.chatMessages, 'system', '❌ No emails selected in Thunderbird');
         return;
       }
       
@@ -287,11 +411,9 @@ const ContextManager = {
       }
       
       this.updateContextUI();
-      UIComponents.addMessageToChat(this.chatMessages, 'system', `✅ Added ${emailsWithContent.length} selected emails to context`);
       
     } catch (error) {
       Utils.logger.error('Error adding selected emails to context:', error);
-      UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Error: ${error.message}`);
     }
   },
 
@@ -497,11 +619,9 @@ const ContextManager = {
         }
         
         this.updateContextUI();
-        UIComponents.addMessageToChat(this.chatMessages, 'system', `✅ Added ${selectedEmails.length} email${selectedEmails.length !== 1 ? 's' : ''} to context`);
         closeModal();
       } catch (error) {
         Utils.logger.error('Error adding emails to context:', error);
-        UIComponents.addMessageToChat(this.chatMessages, 'system', `❌ Error adding emails: ${error.message}`);
       }
     });
     

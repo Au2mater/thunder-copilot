@@ -17,11 +17,11 @@
     - instead we want ti mimic modern "vscode github copilot" style with multiselect fields added to the top of the chat input with x for each to remove
 - [ ] **Pinned sidebar option** - Allow users to pin the sidebar for persistent access
     - research if Thunderbird supports pinned sidebars or other panes that allow an always-visible but hidable / collapsible sidebar / panel
+- [ ] **Match thunderbird theme** - Ensure the UI matches Thunderbird's chosen theme and dark/light mode when it comes to just colors
 - [ ] **Text selection context button** - Add context option to capture selected text from any Thunderbird window
 - [ ] **Email browser/picker** - UI to browse and select multiple emails for context
 - [ ] **Calendar integration UI** - Interface for creating and managing calendar events/tasks
 - [ ] **Rich text email drafting** - Support HTML formatting in generated emails
-
 ## Technical Enhancements  
 - [ ] **Experiment API integration** - Set up Calendar Experiment API for events/tasks
 - [ ] **Content scripts for text selection** - Implement text selection detection across Thunderbird
@@ -38,7 +38,7 @@
 1. [x] **Draft an Email** - COMPLETED (see docs/email-drafting-implementation.md)
 2. [x] **Add Contacts List as Context** - Enhance current basic implementation
 3. [x] **Use Current Text Selection as Context** - High value feature
-4. [ ] **Add Other Emails as Context** - Extend current single email support  with multiple email selection
+4. [x] **Add Other Emails as Context** - Extend current single email support  with multiple email selection
 5. [ ] **Edit Existing Email Draft** - Builds on draft creation
 6. [ ] **Create One Event** - Requires Calendar Experiment API setup
 7. [ ] **Create Multiple Events** - Extension of single event

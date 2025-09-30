@@ -38,19 +38,28 @@ const AIIntegration = {
     
     if (!this.isApiKeyValid) {
       Utils.logger.warn('No API key configured');
-      UIComponents.addMessageToChat(this.chatMessages, 'system', '⚠️ Please set your OpenAI API key in Options to use AI features');
+      UIComponents.addMessageToChat(this.chatMessages, 'system', '⚠ Please set your OpenAI API key in Options to use AI features');
       return;
     }
     
-    // Add user message to chat
-    UIComponents.addMessageToChat(this.chatMessages, 'user', userMessage);
+    // Get current context tags before clearing
+    const contextTags = ContextManager.getCurrentContextTags();
+    
+    // Add user message to chat with context tags
+    UIComponents.addMessageToChat(this.chatMessages, 'user', userMessage, contextTags);
+    
+    // Build context content for AI request (before clearing)
+    const contextContent = ContextManager.buildContextContent();
+    
+    // Clear context immediately after user message is sent
+    ContextManager.clearAllContext();
     
     // Show loading
     UIComponents.showLoading(this.chatMessages);
     sendBtn.disabled = true;
     
     try {
-      Utils.logger.info('Making OpenAI request with context emails:', ContextManager.emailContext.length);
+      Utils.logger.info('Making OpenAI request with context');
       
       // Get fresh API key
       const settings = await browser.storage.local.get('openaiApiKey');
@@ -59,9 +68,6 @@ const AIIntegration = {
       if (!apiKey) {
         throw new Error('API key not found');
       }
-      
-      // Build context from ContextManager
-      const contextContent = ContextManager.buildContextContent();
       
       // Enhanced system prompt for email drafting
       const systemPrompt = `You are an AI assistant helping with email management. You can:

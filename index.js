@@ -8,6 +8,7 @@ const addContextBtn = document.getElementById('addContextBtn');
 const contextDropdown = document.getElementById('contextDropdown');
 const contextIndicator = document.getElementById('contextIndicator');
 const contextText = document.getElementById('contextText');
+const contextPillsInline = document.getElementById('contextPillsInline');
 const apiWarning = document.getElementById('apiWarning');
 const openOptionsLink = document.getElementById('openOptions');
 const addCurrentEmailBtn = document.getElementById('addCurrentEmail');
@@ -16,6 +17,11 @@ const addContactsBtn = document.getElementById('addContacts');
 const addTextSelectionBtn = document.getElementById('addTextSelection');
 const browseEmailsBtn = document.getElementById('browseEmails');
 const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+const clearChatBtn = document.getElementById('clearChatBtn');
+const chatHeader = document.getElementById('chatHeader');
+
+// Conversation state tracking
+let conversationStarted = false;
 
 // Initialize modules with DOM references
 if (typeof ContextManager !== 'undefined') {
@@ -23,7 +29,8 @@ if (typeof ContextManager !== 'undefined') {
     contextIndicator,
     contextText,
     chatMessages,
-    addSelectedEmailsBtn
+    addSelectedEmailsBtn,
+    contextPillsInline
   });
 } else {
   console.error('ContextManager not loaded');
@@ -50,12 +57,55 @@ function autoResizeTextarea() {
   }
 }
 
+// Manage quick actions visibility
+function updateQuickActionsVisibility() {
+  const quickActionsContainer = document.querySelector('.quick-actions');
+  if (!quickActionsContainer) return;
+  
+  if (conversationStarted) {
+    quickActionsContainer.classList.add('hidden');
+    if (chatHeader) chatHeader.classList.add('visible');
+  } else {
+    quickActionsContainer.classList.remove('hidden');
+    if (chatHeader) chatHeader.classList.remove('visible');
+  }
+}
+
+// Check if conversation has messages
+function checkConversationState() {
+  const messages = chatMessages.querySelectorAll('.message:not(.system)');
+  const hasUserMessages = Array.from(messages).some(msg => 
+    msg.classList.contains('user') || msg.classList.contains('assistant')
+  );
+  
+  if (hasUserMessages !== conversationStarted) {
+    conversationStarted = hasUserMessages;
+    updateQuickActionsVisibility();
+  }
+}
+
+// Clear conversation and reset state
+function clearConversation() {
+  // Remove all non-system messages
+  const messages = chatMessages.querySelectorAll('.message:not(.system)');
+  messages.forEach(msg => msg.remove());
+  
+  // Reset conversation state
+  conversationStarted = false;
+  updateQuickActionsVisibility();
+}
+
 promptTextarea.addEventListener('input', autoResizeTextarea);
 
 // Open options page
 openOptionsLink.addEventListener('click', (e) => {
   e.preventDefault();
   browser.runtime.openOptionsPage();
+});
+
+// Clear chat button
+clearChatBtn.addEventListener('click', () => {
+  clearConversation();
 });
 
 // Quick action buttons
@@ -217,6 +267,12 @@ async function sendMessage() {
     return;
   }
   
+  // Mark conversation as started
+  if (!conversationStarted) {
+    conversationStarted = true;
+    updateQuickActionsVisibility();
+  }
+  
   // Clear input
   promptTextarea.value = '';
   autoResizeTextarea();
@@ -279,6 +335,9 @@ async function initialize() {
     } else {
       console.error('ContextManager not available for context UI update');
     }
+    
+    // Initialize quick actions visibility
+    updateQuickActionsVisibility();
     
     // Welcome message
     if (typeof UIComponents !== 'undefined') {
