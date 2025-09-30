@@ -1,27 +1,94 @@
 // background.js
 // Minimal background to receive messages from sidebar and do heavy-lifting.
 
-console.log('Copilot background script loaded');
+// Add-on specific logging system
+const TB_COPILOT_LOG_PREFIX = '[TB-Copilot]';
+
+function log(level, message, ...args) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `${TB_COPILOT_LOG_PREFIX} [${level.toUpperCase()}] ${timestamp}: ${message}`;
+  
+  switch (level.toLowerCase()) {
+    case 'error':
+      console.error(logMessage, ...args);
+      break;
+    case 'warn':
+      console.warn(logMessage, ...args);
+      break;
+    case 'info':
+      console.info(logMessage, ...args);
+      break;
+    case 'debug':
+    default:
+      console.log(logMessage, ...args);
+      break;
+  }
+}
+
+// Convenience functions
+const logger = {
+  debug: (msg, ...args) => log('debug', msg, ...args),
+  info: (msg, ...args) => log('info', msg, ...args),
+  warn: (msg, ...args) => log('warn', msg, ...args),
+  error: (msg, ...args) => log('error', msg, ...args)
+};
+
+logger.info('Copilot background script loaded');
 
 // message handler from sidebar/options
 browser.runtime.onMessage.addListener(async (msg, sender) => {
+  logger.debug('Received message:', msg.type);
+  
   if (msg.type === 'getDisplayedMessage') {
-    // messageDisplay.getDisplayedMessages -> returns list of messages currently shown
-    const displayed = await browser.messageDisplay.getDisplayedMessages();
-    if (displayed && displayed.messages && displayed.messages.length) {
-      const header = displayed.messages[0];
-      const full = await browser.messages.get(header.id);
-      return Promise.resolve({ ok: true, message: full });
+    try {
+      // Get the active tab in the current window
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      logger.debug('Active tabs found:', tabs.length);
+      
+      if (!tabs || tabs.length === 0) {
+        logger.warn('No active tabs found');
+        return { ok: false, error: 'No active tab found' };
+      }
+      
+      const activeTab = tabs[0];
+      logger.debug('Active tab ID:', activeTab.id, 'Type:', activeTab.type);
+      
+      // Get the message displayed in the active tab
+      const message = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
+      
+      if (!message) {
+        logger.warn('No message displayed in active tab');
+        return { ok: false, error: 'No message currently displayed' };
+      }
+      
+      logger.info('Successfully retrieved displayed message:', message.subject);
+      
+      // Get the full message with body content
+      const full = await browser.messages.getFull(message.id);
+      
+      // Merge the header info with full message data
+      const completeMessage = {
+        ...message,
+        parts: full.parts
+      };
+      
+      return { ok: true, message: completeMessage };
+      
+    } catch (error) {
+      logger.error('Error getting displayed message:', error);
+      return { ok: false, error: `Failed to get displayed message: ${error.message}` };
     }
-    return Promise.resolve({ ok: false, error: 'no message displayed' });
   }
 
   if (msg.type === 'searchMessages') {
     // Example search: {query: {subjectContains: "meeting"}}
     try {
+      logger.debug('Searching messages with query:', msg.query);
       const result = await browser.messages.query(msg.query);
+      logger.info('Search completed, found messages:', result.messages?.length || 0);
       return { ok: true, result };
     } catch (err) {
+      logger.error('Error searching messages:', err);
       return { ok: false, error: String(err) };
     }
   }
@@ -29,6 +96,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (msg.type === 'createDraft') {
     // create a compose window prefilled and save it as a draft
     try {
+      logger.debug('Creating draft with subject:', msg.subject);
       const composeTab = await browser.compose.beginNew(null, {
         subject: msg.subject || '',
         body: msg.body || '',
@@ -36,21 +104,31 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
       });
       // wait a tick then save
       await browser.compose.saveMessage(composeTab.id, { mode: 'draft' });
+      logger.info('Draft created successfully, composeTabId:', composeTab.id);
       return { ok: true, composeTabId: composeTab.id };
     } catch (err) {
+      logger.error('Error creating draft:', err);
       return { ok: false, error: String(err) };
     }
   }
 
   if (msg.type === 'generateICS') {
     // msg.events: array of event objects -> returns a blob URL
-    const ics = eventsToICS(msg.events);
-    // create object URL so sidebar can download/import
-    const blob = new Blob([ics], { type: 'text/calendar' });
-    const url = URL.createObjectURL(blob);
-    return { ok: true, url, ics };
+    try {
+      logger.debug('Generating ICS for events:', msg.events?.length || 0);
+      const ics = eventsToICS(msg.events);
+      // create object URL so sidebar can download/import
+      const blob = new Blob([ics], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      logger.info('ICS generated successfully');
+      return { ok: true, url, ics };
+    } catch (err) {
+      logger.error('Error generating ICS:', err);
+      return { ok: false, error: String(err) };
+    }
   }
 
+  logger.warn('Unknown message type received:', msg.type);
   return null;
 });
 

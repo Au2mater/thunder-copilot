@@ -39,18 +39,27 @@
     <button id="toggle">Collapse</button>
   </div>
 
+  <div>
+    <label class="small">OpenAI API Key (stored locally)</label><br/>
+    <input id="apiKey" placeholder="sk-..." style="width:70%; margin-right: 8px;"/>
+    <button id="saveKey">Save key</button>
+    <div id="keyStatus" class="small"></div>
+  </div>
+
   <hr/>
 
   <div>
-    <label>Email Context</label>
-    <div class="btn-group">
-      <button id="addCurrentEmail">Add Current Email</button>
-      <button id="clearContext">Clear Context</button>
-    </div>
-    <div class="context-info">
-      <span class="context-count" id="contextCount">0</span> email(s) in context
-    </div>
-    <div id="emailContext" style="display:none;"></div>
+    <button id="readCurrent">Read current email</button>
+    <button id="addCurrentEmail">Add current email to context</button>
+    <pre id="messageSummary" class="small"></pre>
+  </div>
+
+  <hr/>
+
+  <div>
+    <label>Email Context (<span id="contextCount">0</span> messages)</label>
+    <button id="clearContext">Clear all</button>
+    <div id="emailContext" style="display:none; max-height:200px; overflow-y:auto; border:1px solid #ddd; padding:8px; margin-top:8px;"></div>
   </div>
 
   <hr/>
@@ -60,14 +69,6 @@
     <textarea id="prompt" placeholder="Ask about the emails in context, e.g., 'Summarize these emails and propose calendar events'"></textarea>
     <button id="ask">Ask AI</button>
     <div id="aiResponse" class="small"></div>
-  </div>
-
-  <hr/>
-
-  <div>
-    <label>Current Email Preview</label><br/>
-    <button id="readCurrent">Show Current Email</button>
-    <pre id="messageSummary" class="small"></pre>
   </div>
 
   <hr/>
