@@ -6,7 +6,6 @@ const promptTextarea = document.getElementById('prompt');
 const sendBtn = document.getElementById('sendBtn');
 const addContextBtn = document.getElementById('addContextBtn');
 const contextDropdown = document.getElementById('contextDropdown');
-const contextIndicator = document.getElementById('contextIndicator');
 const contextText = document.getElementById('contextText');
 const contextPillsInline = document.getElementById('contextPillsInline');
 const apiWarning = document.getElementById('apiWarning');
@@ -26,7 +25,6 @@ let conversationStarted = false;
 // Initialize modules with DOM references
 if (typeof ContextManager !== 'undefined') {
   ContextManager.init({
-    contextIndicator,
     contextText,
     chatMessages,
     addSelectedEmailsBtn,

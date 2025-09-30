@@ -7,7 +7,6 @@ const ContextManager = {
   textSelectionContext: [],
   
   // DOM references (will be set by main index.js)
-  contextIndicator: null,
   contextText: null,
   chatMessages: null,
   addSelectedEmailsBtn: null,
@@ -15,7 +14,6 @@ const ContextManager = {
 
   // Initialize with DOM references
   init: function(domRefs) {
-    this.contextIndicator = domRefs.contextIndicator;
     this.contextText = domRefs.contextText;
     this.chatMessages = domRefs.chatMessages;
     this.addSelectedEmailsBtn = domRefs.addSelectedEmailsBtn;
