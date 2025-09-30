@@ -4,93 +4,297 @@
   <meta charset="utf-8"/>
   <title>Copilot</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 8px; }
-    #header { display:flex; gap:8px; align-items:center; justify-content: space-between; }
-    textarea { width:100%; min-height:80px; box-sizing: border-box; }
-    .small { font-size:0.9rem; color: #666; }
-    .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
-    button { cursor: pointer; }
-    .context-info {
-      background: #f0f0f0;
-      padding: 8px;
-      border-radius: 4px;
-      margin-top: 8px;
-      font-size: 0.85rem;
+    * {
+      box-sizing: border-box;
     }
-    .context-count {
-      font-weight: bold;
-      color: #0060df;
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      margin: 0; 
+      padding: 0;
+      width: 400px;
+      min-height: 500px;
+      max-height: 600px;
+      display: flex;
+      flex-direction: column;
+      background: #f8f9fa;
     }
-    #emailContext {
-      max-height: 200px;
+    
+    /* Chat container */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      min-height: 450px;
+      overflow: hidden;
+    }
+    
+    /* Chat messages area */
+    .chat-messages {
+      flex: 1;
       overflow-y: auto;
-      background: #fafafa;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      margin-top: 8px;
-      font-size: 0.85rem;
+      margin-bottom: 16px;
+      padding: 0;
+      min-height: 200px;
+      max-height: 300px;
+    }
+    
+    .message {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      max-width: 85%;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+    
+    .message.user {
+      background: #007AFF;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .message.assistant {
+      background: white;
+      color: #000;
+      border: 1px solid #e1e5e9;
+      border-bottom-left-radius: 4px;
+    }
+    
+    /* Input area */
+    .input-container {
+      background: white;
+      border-radius: 20px;
+      border: 1px solid #e1e5e9;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .input-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      background: #f8f9fa;
+      border-radius: 20px 20px 0 0;
+    }
+    
+    .context-indicator {
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .context-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #28a745;
+    }
+    
+    .add-context-btn {
+      background: #007AFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .add-context-btn:hover {
+      background: #0056b3;
+    }
+    
+    #prompt {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+      resize: none;
+      min-height: 50px;
+      max-height: 150px;
+      background: transparent;
+      font-family: inherit;
+    }
+    
+    #prompt::placeholder {
+      color: #999;
+    }
+    
+    /* Warning message */
+    .api-warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    
+    .api-warning a {
+      color: #007AFF;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .api-warning a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Context dropdown */
+    .context-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 16px;
+      background: white;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      min-width: 150px;
+      display: none;
+    }
+    
+    .context-option {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .context-option:last-child {
+      border-bottom: none;
+    }
+    
+    .context-option:hover {
+      background: #f8f9fa;
+    }
+    
+    /* Send button */
+    .send-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: #007AFF;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    
+    .send-btn:hover {
+      background: #0056b3;
+    }
+    
+    .send-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #666;
+      font-style: italic;
+      padding: 12px 16px;
+    }
+    
+    .loading-dots {
+      display: inline-flex;
+      gap: 2px;
+    }
+    
+    .loading-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #666;
+      animation: loading 1.4s infinite ease-in-out;
+    }
+    
+    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+    .loading-dot:nth-child(3) { animation-delay: 0; }
+    
+    @keyframes loading {
+      0%, 80%, 100% { opacity: 0.3; }
+      40% { opacity: 1; }
+    }
+    
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: #999;
     }
   </style>
 </head>
 <body>
-  <div id="header">
-    <h3>Copilot</h3>
-    <button id="toggle">Collapse</button>
-  </div>
-
-  <div>
-    <label class="small">OpenAI API Key (stored locally)</label><br/>
-    <input id="apiKey" placeholder="sk-..." style="width:70%; margin-right: 8px;"/>
-    <button id="saveKey">Save key</button>
-    <div id="keyStatus" class="small"></div>
-  </div>
-
-  <hr/>
-
-  <div>
-    <button id="readCurrent">Read current email</button>
-    <button id="addCurrentEmail">Add current email to context</button>
-    <pre id="messageSummary" class="small"></pre>
-  </div>
-
-  <hr/>
-
-  <div>
-    <label>Email Context (<span id="contextCount">0</span> messages)</label>
-    <button id="clearContext">Clear all</button>
-    <div id="emailContext" style="display:none; max-height:200px; overflow-y:auto; border:1px solid #ddd; padding:8px; margin-top:8px;"></div>
-  </div>
-
-  <hr/>
-
-  <div>
-    <label>Ask Copilot</label><br/>
-    <textarea id="prompt" placeholder="Ask about the emails in context, e.g., 'Summarize these emails and propose calendar events'"></textarea>
-    <button id="ask">Ask AI</button>
-    <div id="aiResponse" class="small"></div>
-  </div>
-
-  <hr/>
-
-  <div>
-    <label>Search messages (subject contains)</label><br/>
-    <input id="searchTerm" placeholder="meeting"/>
-    <button id="searchBtn">Search</button>
-    <pre id="searchResults" class="small"></pre>
-  </div>
-
-  <hr/>
-
-  <div>
-    <button id="createSampleDraft">Create sample draft</button>
-  </div>
-
-  <hr/>
-
-  <div>
-    <button id="genICS">Generate .ics for 2 sample events</button>
-    <a id="downloadIcs" style="display:none">Download ICS</a>
+  <div class="chat-container">
+    <!-- API Warning (shown when no API key) -->
+    <div id="apiWarning" class="api-warning" style="display: none;">
+      ⚠️ Please set your OpenAI API key in <a href="#" id="openOptions">Options</a> to use AI features.
+    </div>
+    
+    <!-- Chat Messages Area -->
+    <div class="chat-messages" id="chatMessages">
+      <!-- Messages will be added here dynamically -->
+    </div>
+    
+    <!-- Input Container -->
+    <div class="input-container">
+      <div class="input-header">
+        <div class="context-indicator" id="contextIndicator">
+          <span id="contextText">No context</span>
+        </div>
+        <button class="add-context-btn" id="addContextBtn">Add context ▼</button>
+      </div>
+      
+      <textarea 
+        id="prompt" 
+        placeholder="Ask me anything about your emails..."
+        rows="1"
+      ></textarea>
+      
+      <button class="send-btn" id="sendBtn" title="Send message">
+        ➤
+      </button>
+      
+      <!-- Context dropdown -->
+      <div class="context-dropdown" id="contextDropdown">
+        <div class="context-option" id="addCurrentEmail">Current email</div>
+      </div>
+    </div>
   </div>
 
 <script src="sidebar.js"></script>

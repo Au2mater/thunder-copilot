@@ -5,83 +5,188 @@
   <title>Copilot Settings</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
-      margin: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
       max-width: 600px;
+      background: #f8f9fa;
+      min-height: 100vh;
     }
-    h2 {
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
       color: #333;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
+      font-size: 24px;
+      font-weight: 600;
     }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 32px;
+      font-size: 16px;
+    }
+    
     .setting-group {
-      margin-bottom: 20px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      margin-bottom: 24px;
+      padding: 20px;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      background: #fafbfc;
     }
+    
     label {
       display: block;
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: #555;
-    }
-    .description {
-      font-size: 0.9rem;
-      color: #666;
+      font-weight: 600;
       margin-bottom: 8px;
+      color: #333;
+      font-size: 16px;
     }
+    
+    .description {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    
+    .instructions {
+      background: #f0f7ff;
+      border: 1px solid #b8daff;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #004085;
+    }
+    
+    .instructions strong {
+      color: #002752;
+    }
+    
     input[type="text"] {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 3px;
+      padding: 12px;
+      border: 2px solid #e1e5e9;
+      border-radius: 6px;
       font-size: 14px;
       box-sizing: border-box;
+      transition: border-color 0.2s;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     }
+    
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #007AFF;
+    }
+    
+    .input-wrapper {
+      position: relative;
+    }
+    
+    .key-indicator {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+    }
+    
     button {
-      padding: 8px 16px;
-      background-color: #0060df;
+      padding: 12px 24px;
+      background-color: #007AFF;
       color: white;
       border: none;
-      border-radius: 3px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
-      margin-top: 10px;
+      font-weight: 500;
+      margin-top: 16px;
+      transition: background-color 0.2s;
     }
+    
     button:hover {
-      background-color: #0050c5;
+      background-color: #0056b3;
     }
+    
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
     .status {
-      margin-top: 10px;
-      padding: 8px;
-      border-radius: 3px;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
       display: none;
+      font-size: 14px;
+      font-weight: 500;
     }
+    
     .status.success {
       background-color: #d4edda;
       color: #155724;
       border: 1px solid #c3e6cb;
       display: block;
     }
+    
     .status.error {
       background-color: #f8d7da;
       color: #721c24;
       border: 1px solid #f5c6cb;
       display: block;
     }
+    
+    .footer {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #e1e5e9;
+      color: #666;
+      font-size: 12px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h2>Copilot Settings</h2>
-  
-  <div class="setting-group">
-    <label for="apiKey">OpenAI API Key</label>
-    <div class="description">
-      Enter your OpenAI API key to enable AI-powered features. The key is stored locally and securely in Thunderbird.
+  <div class="container">
+    <h1>🤖 Copilot Settings</h1>
+    <div class="subtitle">Configure your AI assistant for Thunderbird</div>
+    
+    <div class="setting-group">
+      <label for="apiKey">OpenAI API Key</label>
+      <div class="description">
+        Your API key is required to use AI features and is stored securely on your device.
+      </div>
+      
+      <div class="instructions">
+        <strong>How to get your API key:</strong>
+        <ol style="margin: 8px 0; padding-left: 20px;">
+          <li>Visit <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #007AFF;">platform.openai.com/api-keys</a></li>
+          <li>Sign in to your OpenAI account</li>
+          <li>Click "Create new secret key"</li>
+          <li>Copy the key and paste it below</li>
+        </ol>
+        <strong>Note:</strong> The key starts with "sk-" and is about 51 characters long.
+      </div>
+      
+      <div class="input-wrapper">
+        <input type="text" id="apiKey" placeholder="sk-proj-..."/>
+        <span class="key-indicator" id="keyIndicator"></span>
+      </div>
+      
+      <button id="saveBtn">💾 Save API Key</button>
+      <div id="status" class="status"></div>
     </div>
-    <input type="text" id="apiKey" placeholder="sk-..."/>
-    <button id="saveBtn">Save Settings</button>
-    <div id="status" class="status"></div>
+    
+    <div class="footer">
+      🔒 Your API key is stored locally and never transmitted except to OpenAI's official API endpoints.
+    </div>
   </div>
 
   <script src="options.js"></script>

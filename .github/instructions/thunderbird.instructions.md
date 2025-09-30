@@ -13,3 +13,10 @@ applyTo: '**/*.js'
 - External `.js` files only - no inline scripts (CSP violations)
 - Check DOM elements exist before adding listeners: `if (element) { element.addEventListener... }`
 - Implement defensive error handling for all async operations
+
+
+### MCP Server Usage
+
+- If available, utilize the Thunderbird MCP server for enhanced extension debugging and automation.
+- For automated testing, prefer Playwright MCP server integration to simulate user interactions and validate extension behavior.
+- Always check for MCP server availability before attempting to connect, and handle connection failures gracefully.
