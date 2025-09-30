@@ -22,6 +22,9 @@ mkdir -p "$BUILD_DIR"
 cp manifest.json "$BUILD_DIR/"
 cp background.js "$BUILD_DIR/"
 cp sidebar.html "$BUILD_DIR/"
+cp sidebar.js "$BUILD_DIR/"
+cp options.html "$BUILD_DIR/"
+cp options.js "$BUILD_DIR/"
 cp -r icons "$BUILD_DIR/"
 
 # Create the .xpi file (which is just a ZIP)
