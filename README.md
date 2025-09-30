@@ -1,71 +1,86 @@
-# Thunder Copilot
-A Copilot extension for Mozilla Thunderbird
+# Thunder Copilot 🤖
+A modern AI-powered chat assistant extension for Mozilla Thunderbird
 
-## 🚀 Installation
+![Modern Chat Interface](https://img.shields.io/badge/UI-Modern%20Chat-blue)
+![Thunderbird](https://img.shields.io/badge/Thunderbird-128%2B-orange)
+![API](https://img.shields.io/badge/OpenAI-GPT--4-green)
 
-### Option 1: Install the Built Extension (Recommended)
+## ✨ Features
 
+- **💬 Modern Chat Interface** - Clean, expandable chat UI with context-aware conversations
+- **📧 Smart Email Context** - Add current emails to conversation context with one click
+- **🔑 Secure Settings** - Configure OpenAI API key in dedicated options page
+- **🎯 Context Management** - Visual indicators for active email context
+- **⚡ Real-time Validation** - Instant API key validation and error handling
+- **📱 Responsive Design** - Optimized for Thunderbird's popup interface
+
+## 🚀 Quick Start
+
+### 1. Install the Extension
+
+**Option A: Build and Install (Recommended)**
 1. **Build the extension:**
    ```bash
    ./build.sh
    ```
-   This creates `thunder-copilot.xpi`
+   On Windows:
+   ```powershell
+   .\package_plugin.ps1
+   ```
+   This creates `MyScriptDirectory.xpi`
 
 2. **Install in Thunderbird:**
    - Open Thunderbird
    - Go to **Tools** > **Add-ons and Themes**
    - Click the **gear icon** (⚙️) and select **"Install Add-on From File..."**
-   - Select the `thunder-copilot.xpi` file
+   - Select the `MyScriptDirectory.xpi` file
    - Accept any permission prompts
 
-3. **Enable the sidebar:**
-   - In Thunderbird, go to **View** > **Layout** > **Copilot** (or press the Copilot sidebar button)
-
-### Option 2: Developer Installation
-
+**Option B: Developer Installation**
 1. Clone this repository
 2. In Thunderbird, go to **Tools** > **Developer Tools** > **Debug Add-ons**
 3. Click **"This Thunderbird"**
 4. Click **"Load Temporary Add-on..."**
 5. Select the `manifest.json` file from this directory
 
-## 🎯 Features
+### 2. Configure API Key
 
-- **📧 Email Context Management** - Add current email or multiple emails to conversation context
-- **🤖 AI Chat Interface** - Simple chat window to interact with AI about emails in context
-- **🔑 Settings Integration** - Configure OpenAI API key in add-on settings (Tools > Add-ons > Options)
-- **🔍 Search Messages** - Search your mailbox by subject keywords
-- **✏️ Create Drafts** - Generate sample email drafts programmatically
-- **📅 Generate Calendar Events** - Create .ics calendar files from email content
-- **🔧 Collapsible UI** - Minimize/expand the sidebar as needed
-
-## 🛠️ Usage
-
-1. **Setup:** Configure your OpenAI API key in the add-on settings:
+1. **Open Settings:**
    - Go to **Tools** > **Add-ons and Themes**
    - Find **TB Copilot (starter)** in the list
    - Click the three dots (**...**) and select **Options**
-   - Enter your OpenAI API key and click **Save Settings**
 
-2. **Open Sidebar:** Enable the Copilot sidebar:
-   - Go to **View** > **Layout** > **Copilot**
-   - Or look for the Copilot sidebar button in the UI
+2. **Add Your OpenAI API Key:**
+   - Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+   - Create a new secret key (starts with "sk-")
+   - Copy and paste it into the settings
+   - Click **Save API Key**
 
-3. **Add Email Context:**
+### 3. Start Chatting
+
+1. **Access the Chat:**
+   - Click the **Copilot** button in Thunderbird's toolbar
+   - Or find it in the menu dropdown
+
+2. **Add Email Context:**
    - Select an email you want to analyze
-   - Click **"Add Current Email"** to add it to the conversation context
-   - Repeat for multiple emails if needed
+   - Click **"Add context ▼"** → **"Current email"**
+   - See the context indicator update
 
-4. **Chat with AI:**
-   - Type your question in the **"Ask Copilot"** text area
-   - Click **"Ask AI"** to get insights about the emails in context
-   - Examples: "Summarize these emails", "Extract action items", "Propose calendar events"
+3. **Chat with AI:**
+   - Type your question in the expandable text area
+   - Example: "Summarize this email and suggest action items"
+   - Press Enter or click the send button (➤)
 
-5. **Other Features:**
-   - **Current Email Preview:** Click "Show Current Email" to preview the selected message
-   - **Search:** Enter keywords in "Search messages" to find emails by subject
-   - **Create Draft:** Click "Create sample draft" to generate a test email draft
-   - **Calendar Events:** Click "Generate .ics" to create sample calendar events
+## 🎯 New Chat Interface
+
+The extension now features a **modern chat interface** with:
+
+- **📝 Expandable Input** - Text area automatically resizes as you type
+- **🔄 Context Management** - Visual indicators show when emails are in context
+- **💬 Chat History** - View conversation history in a clean message format
+- **⚠️ Smart Warnings** - Automatic prompts to set up API key when missing
+- **🎨 Modern Design** - Clean, responsive UI optimized for productivity
 
 ## 📁 Project Structure
 
@@ -523,6 +538,69 @@ The implementation follows Thunderbird's official documentation:
 - [Thunderbird MailExtensions Guide](https://developer.thunderbird.net/add-ons/mailextensions)
 - [WebExtension APIs](https://webextension-api.thunderbird.net/)
 - [Extension Examples](https://github.com/thunderbird/webext-examples)
+
+## 🔧 Development Guidelines
+
+### UI Architecture Notes
+- **Popup vs Sidebar**: Currently configured as `browser_action.default_popup` (popup interface)
+- **CSS Constraints**: Popup has size limits; sidebar CSS should account for ~400px width and 500-600px height
+- **Responsive Design**: Always test in Thunderbird's popup context, not full browser
+
+### Key Implementation Details
+- **Modern Chat UI**: Uses flexbox layout with expandable textarea
+- **Context Management**: Visual indicators and dropdown for email context
+- **API Key Security**: Stored in `browser.storage.local` with validation
+- **Error Handling**: Comprehensive error states and user feedback
+- **Background Communication**: Uses `browser.runtime.sendMessage` for heavy operations
+
+### Important Development Rules
+
+#### 🚨 UI Display Issues Prevention
+1. **Always set explicit dimensions** for popup interfaces:
+   ```css
+   body {
+     width: 400px;
+     min-height: 500px;
+     max-height: 600px;
+   }
+   ```
+
+2. **Test in actual Thunderbird popup**, not browser dev tools
+3. **Use `box-sizing: border-box`** to prevent layout overflow
+4. **Avoid `height: 100vh`** in popup contexts - use specific pixel values
+
+#### 🔒 Security & Storage
+- API keys stored in `browser.storage.local` only
+- Validate API key format before storage: starts with "sk-", minimum length
+- Show clear warnings when API key is missing
+- Never log API keys to console
+- **⚠️ CRITICAL**: Never commit `.env` files with API keys to version control
+
+#### 🎨 UI/UX Standards
+- Use system fonts: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto`
+- Implement loading states for API calls
+- Provide visual feedback for all user actions
+- Keep context indicators always visible
+- Auto-resize text inputs based on content
+
+### Building & Testing
+
+**Build Command:**
+```bash
+# Unix/Mac
+./build.sh
+
+# Windows
+.\package_plugin.ps1
+```
+
+**Testing Checklist:**
+- [ ] Popup opens and displays correctly
+- [ ] API key validation works in options
+- [ ] Email context can be added/removed
+- [ ] Chat interface responds properly
+- [ ] Error states display appropriately
+- [ ] All buttons and interactions work
 
 ---
 
