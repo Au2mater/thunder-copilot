@@ -31,21 +31,41 @@ A Copilot extension for Mozilla Thunderbird
 
 ## 🎯 Features
 
-- **📧 Read Current Email** - Display information about the currently selected message
+- **📧 Email Context Management** - Add current email or multiple emails to conversation context
+- **🤖 AI Chat Interface** - Simple chat window to interact with AI about emails in context
+- **🔑 Settings Integration** - Configure OpenAI API key in add-on settings (Tools > Add-ons > Options)
 - **🔍 Search Messages** - Search your mailbox by subject keywords
 - **✏️ Create Drafts** - Generate sample email drafts programmatically
 - **📅 Generate Calendar Events** - Create .ics calendar files from email content
-- **🤖 AI Integration** - Connect with OpenAI to analyze emails (requires API key)
 - **🔧 Collapsible UI** - Minimize/expand the sidebar as needed
 
 ## 🛠️ Usage
 
-1. **Setup (Optional):** Enter your OpenAI API key in the "OpenAI API Key" field to enable AI features
-2. **Read Email:** Click "Read current email" to see details of the selected message
-3. **Search:** Enter keywords in "Search messages" to find emails by subject
-4. **AI Analysis:** Type a prompt and click "Ask" to get AI insights about the current email
-5. **Create Draft:** Click "Create sample draft" to generate a test email draft
-6. **Calendar Events:** Click "Generate .ics" to create sample calendar events
+1. **Setup:** Configure your OpenAI API key in the add-on settings:
+   - Go to **Tools** > **Add-ons and Themes**
+   - Find **TB Copilot (starter)** in the list
+   - Click the three dots (**...**) and select **Options**
+   - Enter your OpenAI API key and click **Save Settings**
+
+2. **Open Sidebar:** Enable the Copilot sidebar:
+   - Go to **View** > **Layout** > **Copilot**
+   - Or look for the Copilot sidebar button in the UI
+
+3. **Add Email Context:**
+   - Select an email you want to analyze
+   - Click **"Add Current Email"** to add it to the conversation context
+   - Repeat for multiple emails if needed
+
+4. **Chat with AI:**
+   - Type your question in the **"Ask Copilot"** text area
+   - Click **"Ask AI"** to get insights about the emails in context
+   - Examples: "Summarize these emails", "Extract action items", "Propose calendar events"
+
+5. **Other Features:**
+   - **Current Email Preview:** Click "Show Current Email" to preview the selected message
+   - **Search:** Enter keywords in "Search messages" to find emails by subject
+   - **Create Draft:** Click "Create sample draft" to generate a test email draft
+   - **Calendar Events:** Click "Generate .ics" to create sample calendar events
 
 ## 📁 Project Structure
 
@@ -482,7 +502,10 @@ chmod +x build.sh
 ### File Overview
 - **`manifest.json`** - Defines extension permissions, UI elements, and metadata
 - **`background.js`** - Service worker handling message communication and calendar ICS generation
-- **`sidebar.html`** - Complete sidebar UI with embedded JavaScript for all features
+- **`sidebar.html`** - Sidebar UI structure
+- **`sidebar.js`** - Sidebar logic for email context management and AI chat
+- **`options.html`** - Settings page for API key configuration
+- **`options.js`** - Settings page logic
 - **`icons/`** - Extension icons in PNG format
 
 ## 🌟 Extension Architecture

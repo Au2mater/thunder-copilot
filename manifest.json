@@ -20,9 +20,14 @@
     "accountsRead",
     "notifications"
   ],
-  "action": {
+  "sidebar_action": {
     "default_title": "Copilot",
-    "default_popup": "sidebar.html"
+    "default_panel": "sidebar.html",
+    "preferred_width": 400
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   },
   "host_permissions": [
     "https://api.openai.com/*"
