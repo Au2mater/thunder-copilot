@@ -586,7 +586,6 @@ const ContextManager = {
     // Add selected emails handler
     addSelectedBtn.addEventListener('click', async () => {
       if (selectedEmails.length === 0) return;
-      
       try {
         // Get full email content for selected emails
         for (const email of selectedEmails) {
@@ -595,27 +594,38 @@ const ContextManager = {
               type: 'getMessageContent',
               messageId: email.id
             });
-            
-            this.emailContext.push({
-              id: email.id,
-              subject: email.subject,
-              author: email.author,
-              date: email.date,
-              body: contentResult.ok ? contentResult.body : ''
-            });
+            const body = contentResult.ok ? contentResult.body : '';
+            // Check if already in context
+            const idx = this.emailContext.findIndex(e => e.id === email.id);
+            if (idx !== -1) {
+              // Update body if missing or empty
+              if (!this.emailContext[idx].body) {
+                this.emailContext[idx].body = body;
+              }
+            } else {
+              this.emailContext.push({
+                id: email.id,
+                subject: email.subject,
+                author: email.author,
+                date: email.date,
+                body
+              });
+            }
           } catch (error) {
             Utils.logger.error('Error getting content for email:', email.id, error);
-            // Add email without content
-            this.emailContext.push({
-              id: email.id,
-              subject: email.subject,
-              author: email.author,
-              date: email.date,
-              body: ''
-            });
+            // Add email without content if not already present
+            const idx = this.emailContext.findIndex(e => e.id === email.id);
+            if (idx === -1) {
+              this.emailContext.push({
+                id: email.id,
+                subject: email.subject,
+                author: email.author,
+                date: email.date,
+                body: ''
+              });
+            }
           }
         }
-        
         this.updateContextUI();
         closeModal();
       } catch (error) {
