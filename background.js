@@ -81,12 +81,12 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   }
 
   if (msg.type === 'searchMessages') {
-    // Example search: {query: {subjectContains: "meeting"}}
+    // Example search: {query: {subject: "meeting"}}
     try {
       logger.debug('Searching messages with query:', msg.query);
       const result = await browser.messages.query(msg.query);
       logger.info('Search completed, found messages:', result.messages?.length || 0);
-      return { ok: true, result };
+      return { ok: true, messages: result.messages || [] };
     } catch (err) {
       logger.error('Error searching messages:', err);
       return { ok: false, error: String(err) };

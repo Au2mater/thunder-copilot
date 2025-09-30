@@ -15,7 +15,7 @@ Successfully implemented the email drafting functionality as the first feature o
 
 ### Architecture
 
-#### Frontend (sidebar.js/sidebar.html)
+#### Frontend (index.js/index.html)
 - **Quick Action Buttons**: Pre-populated prompts for common tasks
 - **Context Management**: Add current emails and contacts as context
 - **Draft Preview**: Modal preview of generated drafts before creation
@@ -135,8 +135,8 @@ Thank you for the productive meeting today...
 
 ### Key Files Modified
 
-- `sidebar.js`: Enhanced AI interaction and draft creation UI
-- `sidebar.html`: Added quick actions and context management
+- `index.js`: Enhanced AI interaction and draft creation UI
+- `index.html`: Added quick actions and context management
 - `background.js`: Improved draft creation and contact access
 - `manifest.json`: Already had required permissions
 

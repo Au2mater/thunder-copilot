@@ -1,4 +1,4 @@
-// sidebar.js - Modern chat interface script
+// index.js - Modern chat interface script
 
 // Add-on specific logging system
 const TB_COPILOT_LOG_PREFIX = '[TB-Copilot-Sidebar]';

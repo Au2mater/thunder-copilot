@@ -15,7 +15,7 @@ Successfully implemented the text selection context functionality as the second 
 
 ### Architecture
 
-#### Frontend Integration (sidebar.js/sidebar.html)
+#### Frontend Integration (index.js/index.html)
 - **Context Dropdown Option**: "Selected text" option in context menu
 - **Quick Action Button**: "🔍 Analyze Selection" for immediate text analysis
 - **Context Management**: Integrated with existing email and contact context system
@@ -187,8 +187,8 @@ Context: The quarterly review showed positive growth. Q4 budget planning meeting
 
 ### Key Files Modified
 
-- `sidebar.js`: Added text selection capture and context integration
-- `sidebar.html`: Added context dropdown option and quick action button
+- `index.js`: Added text selection capture and context integration
+- `index.html`: Added context dropdown option and quick action button
 - `manifest.json`: Added required tabs and activeTab permissions
 
 ### New Functions Added

@@ -124,7 +124,7 @@ Goals: collapsible right-hand Copilot sidebar that can read current message, sea
 
 Design choices:
 
-* **Sidebar (right) UI**: implement as `sidebar_action` (manifest + `sidebar.html`). This gives a native Thunderbird sidebar that the user can collapse/expand. Use a small toggle button if you also want a floating collapse control. ([developer.mozilla.org][2])
+* **Sidebar (right) UI**: implement as `sidebar_action` (manifest + `index.html`). This gives a native Thunderbird sidebar that the user can collapse/expand. Use a small toggle button if you also want a floating collapse control. ([developer.mozilla.org][2])
 * **OpenAI key**: store in `browser.storage.local` tied to the extension options or the sidebar UI. Warn users storing keys locally has risks. Use `storage` permission.
 * **Message awareness**: in sidebar code, call `browser.messageDisplay.getDisplayedMessages()` to get the currently-open message (or listen to `onMessagesDisplayed`) and call `browser.messages.get(messageId)` to fetch full details. ([webextension-api.thunderbird.net][3])
 * **Search**: use `browser.messages.query()` (or `mailTabs` helpers) to search emails. Use `addressBooks` / `contacts` APIs for contacts. ([webextension-api.thunderbird.net][4])
@@ -172,7 +172,7 @@ Below is a **production-ready starter** skeleton (Manifest V2, targets Thunderbi
   ],
   "sidebar_action": {
     "default_title": "Copilot",
-    "default_panel": "sidebar.html",
+    "default_panel": "index.html",
     "preferred_width": 400
   },
   "host_permissions": [
@@ -286,7 +286,7 @@ function escapeICSText(s) {
 
 ---
 
-## File: `sidebar.html`
+## File: `index.html`
 
 ```html
 <!doctype html>
@@ -495,7 +495,7 @@ If you want, I can:
 thunder-copilot/
 ├── manifest.json       # Extension manifest (permissions, UI elements)
 ├── background.js       # Service worker (message handling, ICS generation)
-├── sidebar.html        # Copilot sidebar UI and interactions
+├── index.html        # Copilot sidebar UI and interactions
 ├── icons/              # Extension icons
 │   ├── icon-48.png
 │   └── icon-128.png
@@ -517,8 +517,8 @@ chmod +x build.sh
 ### File Overview
 - **`manifest.json`** - Defines extension permissions, UI elements, and metadata
 - **`background.js`** - Service worker handling message communication and calendar ICS generation
-- **`sidebar.html`** - Sidebar UI structure
-- **`sidebar.js`** - Sidebar logic for email context management and AI chat
+- **`index.html`** - Sidebar UI structure
+- **`index.js`** - Sidebar logic for email context management and AI chat
 - **`options.html`** - Settings page for API key configuration
 - **`options.js`** - Settings page logic
 - **`icons/`** - Extension icons in PNG format

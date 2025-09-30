@@ -16,7 +16,7 @@ Successfully implemented the multiple email context functionality as the third m
 
 ### Architecture
 
-#### Frontend Components (sidebar.js/sidebar.html)
+#### Frontend Components (index.js/index.html)
 - **Context Dropdown Extension**: Added "Browse emails" option
 - **Email Browser Modal**: Full-featured email selection interface
 - **Search Interface**: Real-time filtering and search functionality
@@ -214,8 +214,8 @@ if (msg.type === 'getMessageContent') {
 
 ### Key Files Modified
 
-- `sidebar.js`: Added email browser modal and selection logic
-- `sidebar.html`: Added "Browse emails" context option
+- `index.js`: Added email browser modal and selection logic
+- `index.html`: Added "Browse emails" context option
 - `background.js`: Added `getMessageContent` message handler
 
 ### New Functions Added
