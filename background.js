@@ -93,17 +93,65 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
     }
   }
 
+  if (msg.type === 'getContacts') {
+    // Get contacts from address books for AI context
+    try {
+      logger.debug('Retrieving contacts from address books');
+      
+      const addressBooks = await browser.addressBooks.list();
+      let allContacts = [];
+      
+      for (const addressBook of addressBooks) {
+        try {
+          const contacts = await browser.contacts.list(addressBook.id);
+          allContacts = allContacts.concat(contacts.map(contact => ({
+            id: contact.id,
+            name: contact.properties.DisplayName || contact.properties.FirstName + ' ' + contact.properties.LastName || 'Unknown',
+            email: contact.properties.PrimaryEmail || contact.properties.SecondEmail || '',
+            addressBookName: addressBook.name
+          })).filter(contact => contact.email)); // Only include contacts with email addresses
+        } catch (bookError) {
+          logger.warn('Error reading contacts from address book:', addressBook.name, bookError);
+        }
+      }
+      
+      logger.info('Retrieved contacts:', allContacts.length);
+      return { ok: true, contacts: allContacts };
+    } catch (err) {
+      logger.error('Error getting contacts:', err);
+      return { ok: false, error: String(err) };
+    }
+  }
+
   if (msg.type === 'createDraft') {
     // create a compose window prefilled and save it as a draft
     try {
       logger.debug('Creating draft with subject:', msg.subject);
-      const composeTab = await browser.compose.beginNew(null, {
-        subject: msg.subject || '',
-        body: msg.body || '',
-        to: msg.to || []
-      });
-      // wait a tick then save
+      
+      // Create compose details object
+      const composeDetails = {};
+      
+      if (msg.subject) {
+        composeDetails.subject = msg.subject;
+      }
+      
+      if (msg.body) {
+        composeDetails.body = msg.body;
+      }
+      
+      if (msg.to && Array.isArray(msg.to) && msg.to.length > 0) {
+        composeDetails.to = msg.to;
+      }
+      
+      // Begin new compose window
+      const composeTab = await browser.compose.beginNew(null, composeDetails);
+      
+      // Small delay to ensure compose window is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Save as draft
       await browser.compose.saveMessage(composeTab.id, { mode: 'draft' });
+      
       logger.info('Draft created successfully, composeTabId:', composeTab.id);
       return { ok: true, composeTabId: composeTab.id };
     } catch (err) {

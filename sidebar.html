@@ -80,6 +80,7 @@
       border-bottom: 1px solid #f0f0f0;
       background: #f8f9fa;
       border-radius: 20px 20px 0 0;
+      position: relative;
     }
     
     .context-indicator {
@@ -106,10 +107,15 @@
       font-size: 12px;
       cursor: pointer;
       transition: background 0.2s;
+      position: relative;
     }
     
     .add-context-btn:hover {
       background: #0056b3;
+    }
+    
+    .context-btn-container {
+      position: relative;
     }
     
     #prompt {
@@ -154,8 +160,8 @@
     /* Context dropdown */
     .context-dropdown {
       position: absolute;
-      top: 100%;
-      right: 16px;
+      top: calc(100% + 4px);
+      right: 0;
       background: white;
       border: 1px solid #e1e5e9;
       border-radius: 8px;
@@ -178,6 +184,32 @@
     
     .context-option:hover {
       background: #f8f9fa;
+    }
+    
+    /* Quick actions */
+    .quick-actions {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .quick-action-btn {
+      background: #f8f9fa;
+      border: 1px solid #e1e5e9;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .quick-action-btn:hover {
+      background: #007AFF;
+      color: white;
+      border-color: #007AFF;
     }
     
     /* Send button */
@@ -271,13 +303,27 @@
       <!-- Messages will be added here dynamically -->
     </div>
     
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-action-btn" data-prompt="Draft a professional email">✉️ Draft Email</button>
+      <button class="quick-action-btn" data-prompt="Summarize the current email">📄 Summarize</button>
+      <button class="quick-action-btn" data-prompt="Reply to the current email">↩️ Reply</button>
+    </div>
+    
     <!-- Input Container -->
     <div class="input-container">
       <div class="input-header">
         <div class="context-indicator" id="contextIndicator">
           <span id="contextText">No context</span>
         </div>
-        <button class="add-context-btn" id="addContextBtn">Add context ▼</button>
+        <div class="context-btn-container">
+          <button class="add-context-btn" id="addContextBtn">Add context ▼</button>
+          <!-- Context dropdown -->
+          <div class="context-dropdown" id="contextDropdown">
+            <div class="context-option" id="addCurrentEmail">Current email</div>
+            <div class="context-option" id="addContacts">My contacts</div>
+          </div>
+        </div>
       </div>
       
       <textarea 
@@ -289,11 +335,6 @@
       <button class="send-btn" id="sendBtn" title="Send message">
         ➤
       </button>
-      
-      <!-- Context dropdown -->
-      <div class="context-dropdown" id="contextDropdown">
-        <div class="context-option" id="addCurrentEmail">Current email</div>
-      </div>
     </div>
   </div>
 
