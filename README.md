@@ -123,7 +123,7 @@ Design choices:
 
 # 3) Starter extension draft (files you can copy + tweak)
 
-Below is a **production-ready starter** skeleton (Manifest V3, targets Thunderbird 128+, MV3 service worker). It implements the sidebar UI, message awareness, OpenAI key storage, message search, contact search, and draft creation. For calendar creation I provide a robust `.ics` generator + a note & experiment stub.
+Below is a **production-ready starter** skeleton (Manifest V2, targets Thunderbird 128+, MV2 background scripts). It implements the sidebar UI, message awareness, OpenAI key storage, message search, contact search, and draft creation. For calendar creation I provide a robust `.ics` generator + a note & experiment stub.
 
 > NOTE: this is a *starter* — you’ll want to expand UI styling, error handling, model prompting, and OpenAI network handling. The code uses only standard Thunderbird WebExtension APIs and indicates where to add an Experiment for calendar direct-write if you decide to go that route.
 
@@ -447,7 +447,7 @@ function escapeICSText(s) {
 # 4) Important implementation notes, constraints & next steps
 
 * **Permissions**: `compose.save` and `messagesRead` are required for drafts and reading messages. Experiments require an elevated permission and will show a scary prompt to users (“Have full, unrestricted access to Thunderbird and your computer”), so consider UX/trust. ([webextension-api.thunderbird.net][5])
-* **Thunderbird versions**: I targeted Manifest V3 and APIs as available in modern Thunderbird (128+). If you need compatibility with older TB versions, you might need Manifest V2 variants. The webext examples repo contains both MV2 and MV3 variants. ([GitHub][10])
+* **Thunderbird versions**: I targeted Manifest V2 and APIs as available in modern Thunderbird (128+). If you need compatibility with older TB versions, you might need Manifest V2 variants. The webext examples repo contains both MV2 and MV2 variants. ([GitHub][10])
 * **Security**: storing an OpenAI API key in `browser.storage.local` is convenient but local-storage only; inform users of risk. For a more secure approach use OAuth or a remote proxy that you control (but that introduces server work).
 * **Calendar automation**: if you need to create *many* events automatically into Thunderbird calendar without user interaction, the Experiment route is the “native” way to do it inside the client. Alternatively, write events directly to the CalDAV server (if you have credentials / tokens) using CalDAV APIs or server-specific APIs (Nextcloud, Google Calendar REST, Microsoft Graph, etc.). That approach needs server/credential handling and mapping attendees, calendars, etc. ([addevent.com][9])
 
@@ -466,7 +466,7 @@ function escapeICSText(s) {
 * Thunderbird Guide to MailExtensions (how to structure add-ons, UI elements, manifest guidance). ([developer.thunderbird.net][1])
 * Thunderbird WebExtension API docs (compose API — beginNew, saveMessage; messageDisplay API) — used for exact method names and required permissions. ([webextension-api.thunderbird.net][5])
 * WebExtension Experiments docs (how to add privileged APIs when built-in APIs aren’t enough). ([webext-docs-staging.readthedocs.io][11])
-* Thunderbird webext examples + repo (concrete working examples for MV2/MV3). ([GitHub][10])
+* Thunderbird webext examples + repo (concrete working examples for MV2/MV2). ([GitHub][10])
 
 ---
 
@@ -511,9 +511,9 @@ chmod +x build.sh
 ## 🌟 Extension Architecture
 
 This is a **WebExtension/MailExtension** for Thunderbird using:
-- **Manifest V3** targeting Thunderbird 128+
+- **Manifest V2** targeting Thunderbird 128+
 - **Sidebar UI** for persistent right-panel interface
-- **Background service worker** for heavy-lifting operations
+- **Background scripts** for heavy-lifting operations
 - **Standard Thunderbird APIs** for message access, composition, and search
 - **ICS generation** for calendar integration (no privileged APIs required)
 
