@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "TB Copilot (starter)",
+  "version": "0.1.0",
+  "description": "Collapsible Copilot sidebar for Thunderbird — read current message, search, create drafts and generate calendar .ics",
+  "icons": {
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "messagesRead",
+    "messagesModify",
+    "compose",
+    "compose.save",
+    "storage",
+    "addressBooks",
+    "accountsRead",
+    "sidebarAction",
+    "notifications"
+  ],
+  "sidebar_action": {
+    "default_title": "Copilot",
+    "default_panel": "sidebar.html",
+    "preferred_width": 400
+  },
+  "host_permissions": [
+    "https://api.openai.com/*"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "copilot-starter@example.com",
+      "strict_min_version": "128.0"
+    }
+  }
+}

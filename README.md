@@ -1,5 +1,53 @@
-# thunder-copilot
-a colpilot for Mozilla Thunderbird
+# Thunder Copilot
+A Copilot extension for Mozilla Thunderbird
+
+## 🚀 Installation
+
+### Option 1: Install the Built Extension (Recommended)
+
+1. **Build the extension:**
+   ```bash
+   ./build.sh
+   ```
+   This creates `thunder-copilot.xpi`
+
+2. **Install in Thunderbird:**
+   - Open Thunderbird
+   - Go to **Tools** > **Add-ons and Themes**
+   - Click the **gear icon** (⚙️) and select **"Install Add-on From File..."**
+   - Select the `thunder-copilot.xpi` file
+   - Accept any permission prompts
+
+3. **Enable the sidebar:**
+   - In Thunderbird, go to **View** > **Layout** > **Copilot** (or press the Copilot sidebar button)
+
+### Option 2: Developer Installation
+
+1. Clone this repository
+2. In Thunderbird, go to **Tools** > **Developer Tools** > **Debug Add-ons**
+3. Click **"This Thunderbird"**
+4. Click **"Load Temporary Add-on..."**
+5. Select the `manifest.json` file from this directory
+
+## 🎯 Features
+
+- **📧 Read Current Email** - Display information about the currently selected message
+- **🔍 Search Messages** - Search your mailbox by subject keywords
+- **✏️ Create Drafts** - Generate sample email drafts programmatically
+- **📅 Generate Calendar Events** - Create .ics calendar files from email content
+- **🤖 AI Integration** - Connect with OpenAI to analyze emails (requires API key)
+- **🔧 Collapsible UI** - Minimize/expand the sidebar as needed
+
+## 🛠️ Usage
+
+1. **Setup (Optional):** Enter your OpenAI API key in the "OpenAI API Key" field to enable AI features
+2. **Read Email:** Click "Read current email" to see details of the selected message
+3. **Search:** Enter keywords in "Search messages" to find emails by subject
+4. **AI Analysis:** Type a prompt and click "Ask" to get AI insights about the current email
+5. **Create Draft:** Click "Create sample draft" to generate a test email draft
+6. **Calendar Events:** Click "Generate .ics" to create sample calendar events
+
+## 📁 Project Structure
 
 1. A concise research summary (how Thunderbird extensions are built and which APIs you can use for the features you asked for).
 2. Design notes + recommended approaches (including realistic constraints — e.g. Thunderbird doesn’t expose a full high-level calendar WebExtension API today; workarounds).
@@ -408,16 +456,51 @@ If you want, I can:
 * expand the Copilot sidebar UI into a polished React/Tailwind single-file preview (I can put it in a canvas/code editor format), **or**
 * deliver a fully packaged example `.xpi` (zipped extension) ready for sideloading (I can produce the files here and show a ZIP path to download).
 
-Which of those would you like me to do *next* — the Experiment skeleton (deep calendar integration) or polishing the sidebar + OpenAI prompt flows (better UX + batching event creation via ICS)?
+```
+thunder-copilot/
+├── manifest.json       # Extension manifest (permissions, UI elements)
+├── background.js       # Service worker (message handling, ICS generation)
+├── sidebar.html        # Copilot sidebar UI and interactions
+├── icons/              # Extension icons
+│   ├── icon-48.png
+│   └── icon-128.png
+├── build.sh           # Build script to create .xpi package
+└── README.md          # This documentation
+```
 
-[1]: https://developer.thunderbird.net/add-ons/mailextensions?utm_source=chatgpt.com "A Guide to Extensions"
-[2]: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction?utm_source=chatgpt.com "sidebarAction - Mozilla - MDN"
-[3]: https://webextension-api.thunderbird.net/en/stable/messageDisplay.html?utm_source=chatgpt.com "messageDisplay API"
-[4]: https://webextension-api.thunderbird.net/en/latest/messages.html?utm_source=chatgpt.com "messages API"
-[5]: https://webextension-api.thunderbird.net/en/latest/compose.html "compose API — WebExtension Documentation for Thunderbird Beta<br><br>Manifest V3  documentation"
-[6]: https://developer.thunderbird.net/add-ons/mailextensions/supported-webextension-api?utm_source=chatgpt.com "Supported WebExtension APIs"
-[7]: https://developer.thunderbird.net/add-ons/mailextensions/experiments?utm_source=chatgpt.com "Introducing Experiments"
-[8]: https://services.addons.thunderbird.net/EN-US/thunderbird/addon/events-from-mail-content/?src=cb-dl-name&utm_source=chatgpt.com "Create Calendar events from mail content"
-[9]: https://www.addevent.com/c/documentation/calendar-events-api?utm_source=chatgpt.com "Calendar & Events API [v2]"
-[10]: https://github.com/thunderbird/webext-examples?utm_source=chatgpt.com "Example extensions for Thunderbird WebExtensions APIs"
-[11]: https://webext-docs-staging.readthedocs.io/en/78/how-to/experiments.html?utm_source=chatgpt.com "WebExtension Experiments"
+## 🔧 Development
+
+### Building from Source
+```bash
+# Make the build script executable
+chmod +x build.sh
+
+# Build the extension
+./build.sh
+```
+
+### File Overview
+- **`manifest.json`** - Defines extension permissions, UI elements, and metadata
+- **`background.js`** - Service worker handling message communication and calendar ICS generation
+- **`sidebar.html`** - Complete sidebar UI with embedded JavaScript for all features
+- **`icons/`** - Extension icons in PNG format
+
+## 🌟 Extension Architecture
+
+This is a **WebExtension/MailExtension** for Thunderbird using:
+- **Manifest V3** targeting Thunderbird 128+
+- **Sidebar UI** for persistent right-panel interface
+- **Background service worker** for heavy-lifting operations
+- **Standard Thunderbird APIs** for message access, composition, and search
+- **ICS generation** for calendar integration (no privileged APIs required)
+
+## 📚 Technical References
+
+The implementation follows Thunderbird's official documentation:
+- [Thunderbird MailExtensions Guide](https://developer.thunderbird.net/add-ons/mailextensions)
+- [WebExtension APIs](https://webextension-api.thunderbird.net/)
+- [Extension Examples](https://github.com/thunderbird/webext-examples)
+
+---
+
+*Built with ❤️ for the Thunderbird community*
