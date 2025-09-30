@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*.js'
+applyTo: '**/*.js, **/*.html'
 ---
 
 ## Thunderbird WebExtension Development Guidelines
