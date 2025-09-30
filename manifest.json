@@ -18,6 +18,7 @@
     "storage",
     "addressBooks",
     "accountsRead",
+    "sidebarAction",
     "notifications"
   ],
   "sidebar_action": {
