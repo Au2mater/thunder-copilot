@@ -3,6 +3,8 @@
 
 <head>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <meta charset="utf-8" />
   <title>Copilot</title>
   <style>
@@ -17,6 +19,7 @@
       text-transform: none;
       white-space: nowrap;
       direction: ltr;
+      font-feature-settings: 'liga';
       -webkit-font-feature-settings: 'liga';
       -webkit-font-smoothing: antialiased;
       vertical-align: middle;
@@ -24,9 +27,39 @@
     * {
       box-sizing: border-box;
     }
+    :root {
+      --primary-1: #f0f4ff;
+      --primary-2: #dbeafe;
+      --primary-6: #007AFF;
+      --primary-7: #0056b3;
+      --secondary-1: #fff7ed;
+      --grey-1: #f8f9fa;
+      --grey-2: #e2e8f0;
+      --grey-3: #f1f5f9;
+      --grey-4: #e0e7ef;
+      --email-bg: #e0f2fe;
+      --email-border: #38bdf8;
+      --email-text: #0369a1;
+      --contacts-bg: #fef9c3;
+      --contacts-border: #fde047;
+      --contacts-text: #a16207;
+      --calendar-bg: #f3e8ff;
+      --calendar-border: #c084fc;
+      --calendar-text: #7c3aed;
+      --tasks-bg: #dcfce7;
+      --tasks-border: #4ade80;
+      --tasks-text: #166534;
+      --error: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e42;
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --radius-pill: 12px;
+      --radius-btn: 8px;
+      --radius-card: 16px;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--font-family);
       margin: 0;
       padding: 0;
       width: 400px;
@@ -34,13 +67,11 @@
       max-height: 600px;
       display: flex;
       flex-direction: column;
-      background: #f8f9fa;
+      background: var(--grey-1);
       overflow-x: hidden;
-      /* Prevent horizontal scroll on body */
       box-sizing: border-box;
     }
 
-    /* Chat container */
     .chat-container {
       flex: 1;
       display: flex;
@@ -53,32 +84,26 @@
       box-sizing: border-box;
     }
 
-    /* Content area (messages + quick actions + pills) */
     .chat-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      margin-bottom: 100px;
-      /* Reduced since pills are now inline */
+  margin-bottom: 180px; /* Increased to prevent overlap with quick actions and input */
       width: 100%;
       box-sizing: border-box;
     }
 
-    /* Chat messages area */
     .chat-messages {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      /* Prevent horizontal scroll */
       margin-bottom: 16px;
       padding: 0;
       min-height: 200px;
       max-height: none;
-      /* Remove max-height to let it grow */
       position: relative;
       width: 100%;
-      /* Ensure full width */
     }
 
     .chat-header {
@@ -86,7 +111,7 @@
       top: 0;
       background: rgba(248, 249, 250, 0.95);
       backdrop-filter: blur(10px);
-      border-bottom: 1px solid #e1e5e9;
+      border-bottom: 1px solid var(--grey-2);
       padding: 8px 12px;
       margin: 0 -12px 12px -12px;
       display: none;
@@ -95,14 +120,12 @@
       font-size: 12px;
       color: #666;
     }
-
     .chat-header.visible {
       display: flex;
     }
-
     .clear-chat-btn {
       background: none;
-      border: 1px solid #e1e5e9;
+      border: 1px solid var(--grey-2);
       border-radius: 4px;
       padding: 4px 8px;
       font-size: 11px;
@@ -110,65 +133,55 @@
       color: #666;
       transition: all 0.2s;
     }
-
     .clear-chat-btn:hover {
-      background: #f8f9fa;
+      background: var(--grey-1);
       color: #333;
     }
-
     .message {
       margin-bottom: 16px;
       padding: 12px 16px;
       border-radius: 12px;
       max-width: calc(85% - 8px);
-      /* Account for margins/padding */
       word-wrap: break-word;
       word-break: break-word;
-      /* Force long words to break */
       line-height: 1.4;
       box-sizing: border-box;
     }
-
     .message.user {
-      background: #007AFF;
+      background: var(--primary-6);
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 4px;
     }
-
     .message.assistant {
       background: white;
       color: #000;
-      border: 1px solid #e1e5e9;
+      border: 1px solid var(--grey-2);
       border-bottom-left-radius: 4px;
     }
-
-    /* Input area */
     .input-container {
       background: white;
       border-radius: 20px;
-      border: 1px solid #e1e5e9;
+      border: 1px solid var(--grey-2);
       position: absolute;
       bottom: 16px;
       left: 16px;
       right: 16px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      z-index: 10;
+  z-index: auto;
     }
-
     .input-header {
       display: flex;
       justify-content: flex-start;
       align-items: flex-end;
       padding: 8px 16px;
       border-bottom: 1px solid #f0f0f0;
-      background: #f8f9fa;
+      background: var(--grey-1);
       border-radius: 20px 20px 0 0;
       position: relative;
       flex-wrap: wrap;
       gap: 6px;
     }
-
     .context-area {
       display: flex;
       align-items: baseline;
@@ -176,159 +189,264 @@
       flex-wrap: wrap;
       flex: 1;
     }
-
-    .context-indicator {
-      display: none;
-      /* Remove "No context" text completely */
-    }
-
-    .context-indicator.hidden {
-      display: none;
-    }
-
-    .context-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #28a745;
-    }
-
-    /* Add context button - now pill-sized and on the left */
-    .add-context-btn {
-      margin: 0;
-      display: inline-flex;
-      align-items: center;
-      line-height: 1;
-      vertical-align: middle;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      background: #1976d2;
-      border: none;
-      border-radius: 8px;
-  padding: 4px 14px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.2s, box-shadow 0.2s;
-      position: relative;
-      white-space: nowrap;
-      flex-shrink: 0;
-  max-width: 110px;
-      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
-    }
-
-    .add-context-btn:hover {
-      background: #1565c0;
-      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.16);
-    }
-
     .context-btn-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 24px;
       position: relative;
-      flex-shrink: 0;
+      width: 100%;
+      flex-wrap: wrap;
     }
-
-    /* Inline context pills (smaller versions for input header) */
-    .context-pills-inline {
+    .context-btn-wrap {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
       align-items: center;
+      gap: 6px;
+      width: 100%;
     }
-
+    .add-context-btn {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  vertical-align: middle;
+  gap: 3px;
+  background: var(--primary-6);
+  border: none;
+  border-radius: var(--radius-btn);
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  position: relative;
+  white-space: nowrap;
+  width: auto;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+  flex-shrink: 0;
+    }
+    .add-context-btn:hover {
+      background: var(--primary-7);
+      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.16);
+    }
+    .context-pills-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  margin-left: 0;
+  min-width: 0;
+    }
     .context-pill-inline {
-      line-height: 1;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--email-bg);
+    border: 1px solid var(--email-border);
+    border-radius: var(--radius-pill);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--email-text);
+    transition: all 0.2s;
+    max-width: 180px;
+    margin: 0;
+    }
+    .context-pill-inline.selected {
+      background: var(--primary-6);
+      color: #fff;
+      border-color: var(--primary-6);
+    }
+    .context-pill-inline.pill-email {
+      background: var(--email-bg);
+      border-color: var(--email-border);
+      color: var(--email-text);
+    }
+    .context-pill-inline.pill-contacts {
+      background: var(--contacts-bg);
+      border-color: var(--contacts-border);
+      color: var(--contacts-text);
+    }
+    .context-pill-inline.pill-calendar {
+      background: var(--calendar-bg);
+      border-color: var(--calendar-border);
+      color: var(--calendar-text);
+    }
+    .context-pill-inline.pill-tasks {
+      background: var(--tasks-bg);
+      border-color: var(--tasks-border);
+      color: var(--tasks-text);
+    }
+    /* Context pills container */
+    .context-pills-container {
+      margin-bottom: 12px;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 0;
+      transition: all 0.2s ease;
+      position: relative;
+  z-index: auto;
+    }
+    .context-pills-container.has-pills {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--grey-2);
+      margin-bottom: 16px;
+    }
+    /* Individual context pills */
+    .context-pill {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
-      background: #e3f2fd;
-      border: 1px solid #90caf9;
-      border-radius: 8px;
-      padding: 6px 12px;
+      gap: 6px;
+      background: var(--email-bg);
+      border: 1px solid var(--email-border);
+      border-radius: var(--radius-pill);
+      padding: 4px 8px;
       font-size: 12px;
       font-weight: 500;
-      color: #1976d2;
+      color: var(--email-text);
       transition: all 0.2s;
-      max-width: 120px;
+      max-width: 280px;
     }
-
-    .context-pill-inline:hover {
-      background: #bbdefb;
-      border-color: #64b5f6;
+    .context-pill.pill-email {
+      background: var(--email-bg);
+      border-color: var(--email-border);
+      color: var(--email-text);
     }
-
-    .context-pill-inline.pill-email {
-      background: #e8f5e8;
-      border-color: #81c784;
-      color: #2e7d32;
+    .context-pill.pill-contacts {
+      background: var(--contacts-bg);
+      border-color: var(--contacts-border);
+      color: var(--contacts-text);
     }
-
-    .context-pill-inline.pill-email:hover {
-      background: #c8e6c9;
-      border-color: #66bb6a;
+    .context-pill.pill-calendar {
+      background: var(--calendar-bg);
+      border-color: var(--calendar-border);
+      color: var(--calendar-text);
     }
-
-    .context-pill-inline.pill-contacts {
-      background: #fff3e0;
-      border-color: #ffb74d;
-      color: #f57c00;
+    .context-pill.pill-tasks {
+      background: var(--tasks-bg);
+      border-color: var(--tasks-border);
+      color: var(--tasks-text);
     }
-
-    .context-pill-inline.pill-contacts:hover {
-      background: #ffe0b2;
-      border-color: #ffa726;
+    .context-pill.selected {
+      background: var(--primary-6);
+      color: #fff;
+      border-color: var(--primary-6);
     }
-
-    .context-pill-inline.pill-selection {
-      background: #f3e5f5;
-      border-color: #ce93d8;
-      color: #7b1fa2;
+    .context-pill:hover {
+      filter: brightness(0.97);
+      border-color: var(--primary-6);
     }
-
-    .context-pill-inline.pill-selection:hover {
-      background: #e1bee7;
-      border-color: #ba68c8;
-    }
-
-    .context-pill-inline-label {
+    .context-pill-label {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       flex: 1;
       min-width: 0;
     }
-
-    .context-pill-inline-remove {
-      background: rgba(0, 0, 0, 0.1);
+    .context-pill-remove {
+  background: none;
+  border: none;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: #888;
+  padding: 0;
+  margin-left: 2px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+    }
+    .context-pill-remove:hover {
+  color: #444;
+    }
+    .context-pill-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    /* Context dropdown */
+    .context-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border: 1px solid var(--grey-2);
+  border-radius: var(--radius-btn);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 3000;
+  min-width: 150px;
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+    }
+    .context-dropdown.dropdown-up {
+      top: auto;
+      bottom: calc(100% + 4px);
+    }
+    .context-option {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .context-option:last-child {
+      border-bottom: none;
+    }
+    .context-option:hover {
+      background: var(--grey-1);
+    }
+    /* Send button */
+    .send-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: var(--primary-6);
+      color: white;
       border: none;
       border-radius: 50%;
-      width: 12px;
-      height: 12px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      font-size: 8px;
-      line-height: 1;
-      color: currentColor;
+      font-size: 16px;
       transition: background 0.2s;
-      flex-shrink: 0;
     }
-
-    .context-pill-inline-remove:hover {
-      background: rgba(0, 0, 0, 0.2);
+    .send-btn:hover {
+      background: var(--primary-7);
     }
-
-    .context-pill-inline-icon {
-      font-size: 10px;
-      flex-shrink: 0;
+    .send-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
-
-    .context-btn-container {
-      position: relative;
+    /* Warning message */
+    .api-warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 12px 16px;
+      border-radius: var(--radius-btn);
+      margin-bottom: 16px;
+      font-size: 14px;
     }
-
+    .api-warning a {
+      color: var(--primary-6);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .api-warning a:hover {
+      text-decoration: underline;
+    }
+    /* Input area tweaks */
     #prompt {
       width: 100%;
       border: none;
@@ -342,70 +460,27 @@
       background: transparent;
       font-family: inherit;
     }
-
     #prompt::placeholder {
       color: #999;
     }
-
-    /* Warning message */
-    .api-warning {
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
-      color: #856404;
+    /* Utility classes */
+    .hidden { display: none !important; }
+    .context-indicator { display: none; }
+    .context-indicator.hidden { display: none; }
+    .context-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #28a745;
+    }
+    .loading {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      color: #666;
+      font-style: italic;
       padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 14px;
     }
-
-    .api-warning a {
-      color: #007AFF;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .api-warning a:hover {
-      text-decoration: underline;
-    }
-
-    /* Context dropdown */
-    .context-dropdown {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      background: white;
-      border: 1px solid #e1e5e9;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
-      min-width: 150px;
-      display: none;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    /* When dropdown needs to appear above */
-    .context-dropdown.dropdown-up {
-      top: auto;
-      bottom: calc(100% + 4px);
-    }
-
-    .context-option {
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 14px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .context-option:last-child {
-      border-bottom: none;
-    }
-
-    .context-option:hover {
-      background: #f8f9fa;
-    }
-
-    /* Quick actions */
     .quick-actions {
       margin-bottom: 16px;
       display: flex;
@@ -414,182 +489,106 @@
       transition: all 0.3s ease;
       opacity: 1;
       max-height: 120px;
-      /* Increased to allow for 2 rows */
       overflow: hidden;
       position: relative;
-      z-index: 5;
-      /* Ensure it appears above other content */
+  z-index: auto;
     }
-
     .quick-actions.hidden {
       opacity: 0;
       max-height: 0;
       margin-bottom: 0;
       padding: 0;
     }
-
     .quick-action-btn {
-      background: #f8f9fa;
-      border: 1px solid #e1e5e9;
-      border-radius: 16px;
-      padding: 6px 12px;
-      font-size: 12px;
+      background: var(--primary-6);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      padding: 6px 16px;
+      font-size: 13px;
       cursor: pointer;
       transition: all 0.2s;
-      color: #333;
       font-weight: 500;
     }
-
     .quick-action-btn:hover {
-      background: #007AFF;
-      color: white;
-      border-color: #007AFF;
+      background: var(--primary-7);
     }
-
-    /* Context pills container */
-    .context-pills-container {
-      margin-bottom: 12px;
-      padding: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      min-height: 0;
-      transition: all 0.2s ease;
-      position: relative;
-      z-index: 5;
-      /* Ensure it appears above other content */
-    }
-
-    .context-pills-container.has-pills {
-      padding: 8px 0;
-      border-bottom: 1px solid #e1e5e9;
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
       margin-bottom: 16px;
     }
-
-    /* Individual context pills */
-    .context-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #e3f2fd;
-      border: 1px solid #90caf9;
-      border-radius: 12px;
-      padding: 4px 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #1976d2;
-      transition: all 0.2s;
-      max-width: 280px;
+    .context-list {
+      margin-bottom: 24px;
     }
-
-    .context-pill:hover {
-      background: #bbdefb;
-      border-color: #64b5f6;
+    .context-list .context-pill {
+      margin-bottom: 6px;
     }
-
-    .context-pill.pill-email {
-      background: #e8f5e8;
-      border-color: #81c784;
-      color: #2e7d32;
-    }
-
-    .context-pill.pill-email:hover {
-      background: #c8e6c9;
-      border-color: #66bb6a;
-    }
-
-    .context-pill.pill-contacts {
-      background: #fff3e0;
-      border-color: #ffb74d;
-      color: #f57c00;
-    }
-
-    .context-pill.pill-contacts:hover {
-      background: #ffe0b2;
-      border-color: #ffa726;
-    }
-
-    .context-pill.pill-selection {
-      background: #f3e5f5;
-      border-color: #ce93d8;
-      color: #7b1fa2;
-    }
-
-    .context-pill.pill-selection:hover {
-      background: #e1bee7;
-      border-color: #ba68c8;
-    }
-
-    .context-pill-label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .context-pill-remove {
-      background: rgba(0, 0, 0, 0.1);
-      border: none;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 10px;
-      line-height: 1;
-      color: currentColor;
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-
-    .context-pill-remove:hover {
-      background: rgba(0, 0, 0, 0.2);
-    }
-
-    .context-pill-icon {
-      font-size: 12px;
-      flex-shrink: 0;
-    }
-
-    /* Send button */
-    .send-btn {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      background: #007AFF;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      transition: background 0.2s;
-    }
-
-    .send-btn:hover {
-      background: #0056b3;
-    }
-
-    .send-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-
-    /* Loading state */
-    .loading {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
+    .context-description {
       color: #666;
-      font-style: italic;
-      padding: 12px 16px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .context-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--grey-2);
+      margin: 24px 0;
+    }
+    .ai-section {
+      margin-top: 32px;
+    }
+    .ai-section .section-title {
+      margin-bottom: 8px;
+    }
+    .ai-section .context-description {
+      margin-bottom: 12px;
+    }
+    .ai-btn {
+      background: var(--success);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      padding: 8px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .ai-btn:hover {
+      background: #16a34a;
+    }
+    .error-message {
+      color: var(--error);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .success-message {
+      color: var(--success);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .warning-message {
+      color: var(--warning);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .loading-spinner {
+      border: 3px solid var(--grey-2);
+      border-top: 3px solid var(--primary-6);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -631,8 +630,9 @@
         <div class="input-container">
           <div class="input-header">
             <div class="context-area">
-              <div class="context-btn-container">
+              <div class="context-btn-container" id="contextBtnContainer">
                 <button class="add-context-btn" id="addContextBtn"><span class="material-icons">add_circle</span> Context</button>
+                <!-- Pills should be rendered here as direct siblings to the button by JS -->
                 <!-- Context dropdown -->
                 <div class="context-dropdown" id="contextDropdown">
                   <div class="context-option" id="addCurrentEmail"><span class="material-icons">mail</span> Current email</div>
@@ -641,10 +641,6 @@
                   <div class="context-option" id="addTextSelection"><span class="material-icons">text_snippet</span> Selected text</div>
                   <div class="context-option" id="browseEmails"><span class="material-icons">search</span> Browse emails</div>
                 </div>
-              </div>
-
-              <div class="context-pills-inline" id="contextPillsInline">
-                <!-- Inline context pills will be added here dynamically -->
               </div>
             </div>
           </div>
