@@ -2,9 +2,25 @@
 <html>
 
 <head>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <meta charset="utf-8" />
   <title>Copilot</title>
   <style>
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      display: inline-block;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+      vertical-align: middle;
+    }
     * {
       box-sizing: border-box;
     }
@@ -604,10 +620,10 @@
 
           <!-- Quick Actions -->
           <div class="quick-actions">
-            <button class="quick-action-btn" data-prompt="Draft a professional email">✉ Draft Email</button>
-            <button class="quick-action-btn" data-prompt="Summarize the current email">⊞ Summarize</button>
-            <button class="quick-action-btn" data-prompt="Reply to the current email">↰ Reply</button>
-            <button class="quick-action-btn" data-prompt="Analyze the selected text">⌕ Analyze Selection</button>
+            <button class="quick-action-btn" data-prompt="Draft a professional email"><span class="material-icons">mail</span> Draft Email</button>
+            <button class="quick-action-btn" data-prompt="Summarize the current email"><span class="material-icons">summarize</span> Summarize</button>
+            <button class="quick-action-btn" data-prompt="Reply to the current email"><span class="material-icons">reply</span> Reply</button>
+            <button class="quick-action-btn" data-prompt="Analyze the selected text"><span class="material-icons">text_snippet</span> Analyze Selection</button>
           </div>
         </div>
 
@@ -616,14 +632,14 @@
           <div class="input-header">
             <div class="context-area">
               <div class="context-btn-container">
-                <button class="add-context-btn" id="addContextBtn">⊕ Context</button>
+                <button class="add-context-btn" id="addContextBtn"><span class="material-icons">add_circle</span> Context</button>
                 <!-- Context dropdown -->
                 <div class="context-dropdown" id="contextDropdown">
-                  <div class="context-option" id="addCurrentEmail">✉ Current email</div>
-                  <div class="context-option" id="addSelectedEmails" style="display: none;">✉ Selected emails</div>
-                  <div class="context-option" id="addContacts">⚇ My contacts</div>
-                  <div class="context-option" id="addTextSelection">▢ Selected text</div>
-                  <div class="context-option" id="browseEmails">⌕ Browse emails</div>
+                  <div class="context-option" id="addCurrentEmail"><span class="material-icons">mail</span> Current email</div>
+                  <div class="context-option" id="addSelectedEmails"><span class="material-icons">mail</span> Selected emails</div>
+                  <div class="context-option" id="addContacts"><span class="material-icons">contacts</span> My contacts</div>
+                  <div class="context-option" id="addTextSelection"><span class="material-icons">text_snippet</span> Selected text</div>
+                  <div class="context-option" id="browseEmails"><span class="material-icons">search</span> Browse emails</div>
                 </div>
               </div>
               <div class="context-indicator" id="contextIndicator">
