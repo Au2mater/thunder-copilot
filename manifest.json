@@ -19,6 +19,8 @@
     "addressBooks",
     "accountsRead",
     "notifications",
+    "tabs",
+    "activeTab",
     "https://api.openai.com/*"
   ],
   "browser_action": {

@@ -169,6 +169,14 @@
       z-index: 1000;
       min-width: 150px;
       display: none;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    /* When dropdown needs to appear above */
+    .context-dropdown.dropdown-up {
+      top: auto;
+      bottom: calc(100% + 4px);
     }
     
     .context-option {
@@ -308,6 +316,7 @@
       <button class="quick-action-btn" data-prompt="Draft a professional email">✉️ Draft Email</button>
       <button class="quick-action-btn" data-prompt="Summarize the current email">📄 Summarize</button>
       <button class="quick-action-btn" data-prompt="Reply to the current email">↩️ Reply</button>
+      <button class="quick-action-btn" data-prompt="Analyze the selected text">🔍 Analyze Selection</button>
     </div>
     
     <!-- Input Container -->
@@ -322,6 +331,7 @@
           <div class="context-dropdown" id="contextDropdown">
             <div class="context-option" id="addCurrentEmail">Current email</div>
             <div class="context-option" id="addContacts">My contacts</div>
+            <div class="context-option" id="addTextSelection">Selected text</div>
           </div>
         </div>
       </div>

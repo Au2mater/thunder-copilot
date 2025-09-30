@@ -37,6 +37,7 @@ logger.info('Modern chat sidebar script loaded');
 // Store email context (messages to include in AI prompts)
 let emailContext = [];
 let contactsContext = [];
+let textSelectionContext = [];
 let isApiKeyValid = false;
 
 // DOM Elements
@@ -51,7 +52,14 @@ const apiWarning = document.getElementById('apiWarning');
 const openOptionsLink = document.getElementById('openOptions');
 const addCurrentEmailBtn = document.getElementById('addCurrentEmail');
 const addContactsBtn = document.getElementById('addContacts');
+const addTextSelectionBtn = document.getElementById('addTextSelection');
 const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+
+// Helper function to close dropdown properly
+function closeContextDropdown() {
+  contextDropdown.style.display = 'none';
+  contextDropdown.classList.remove('dropdown-up');
+}
 
 // Auto-resize textarea
 function autoResizeTextarea() {
@@ -106,12 +114,30 @@ quickActionBtns.forEach(btn => {
 addContextBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   const isVisible = contextDropdown.style.display === 'block';
-  contextDropdown.style.display = isVisible ? 'none' : 'block';
+  
+  if (isVisible) {
+    contextDropdown.style.display = 'none';
+  } else {
+    // Show dropdown and calculate positioning
+    contextDropdown.style.display = 'block';
+    
+    // Check if dropdown would be clipped at bottom
+    const dropdownRect = contextDropdown.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - dropdownRect.bottom;
+    
+    // If not enough space below (less than 20px margin), show above
+    if (spaceBelow < 20) {
+      contextDropdown.classList.add('dropdown-up');
+    } else {
+      contextDropdown.classList.remove('dropdown-up');
+    }
+  }
 });
 
 // Close dropdown when clicking outside
 document.addEventListener('click', () => {
-  contextDropdown.style.display = 'none';
+  closeContextDropdown();
 });
 
 // Prevent dropdown from closing when clicking inside
@@ -157,7 +183,7 @@ addCurrentEmailBtn.addEventListener('click', async () => {
     addMessageToChat('system', `❌ Error: ${error.message}`);
   }
   
-  contextDropdown.style.display = 'none';
+  closeContextDropdown();
 });
 
 // Add contacts to context
@@ -180,14 +206,113 @@ addContactsBtn.addEventListener('click', async () => {
     addMessageToChat('system', `❌ Error: ${error.message}`);
   }
   
-  contextDropdown.style.display = 'none';
+  closeContextDropdown();
+});
+
+// Add text selection to context
+addTextSelectionBtn.addEventListener('click', async () => {
+  try {
+    logger.debug('Adding text selection to context');
+    
+    // Get the active tab
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tabs || tabs.length === 0) {
+      addMessageToChat('system', '❌ No active tab found');
+      closeContextDropdown();
+      return;
+    }
+    
+    const activeTab = tabs[0];
+    logger.debug('Active tab:', activeTab.id, activeTab.type);
+    
+    // Execute script to get selected text
+    const results = await browser.tabs.executeScript(activeTab.id, {
+      code: `
+        (function() {
+          const selection = window.getSelection();
+          const selectedText = selection.toString().trim();
+          
+          if (!selectedText) {
+            return { success: false, error: 'No text selected' };
+          }
+          
+          // Get some context around the selection
+          let contextInfo = '';
+          try {
+            const range = selection.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            
+            // Try to find parent element with useful context
+            let contextElement = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+            while (contextElement && contextElement !== document.body) {
+              if (contextElement.tagName && 
+                  ['P', 'DIV', 'ARTICLE', 'SECTION', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(contextElement.tagName)) {
+                break;
+              }
+              contextElement = contextElement.parentElement;
+            }
+            
+            if (contextElement) {
+              contextInfo = contextElement.textContent || '';
+              // Limit context length
+              if (contextInfo.length > 500) {
+                contextInfo = contextInfo.substring(0, 500) + '...';
+              }
+            }
+          } catch (e) {
+            // Context extraction failed, but we still have the selection
+          }
+          
+          return {
+            success: true,
+            selectedText: selectedText,
+            contextText: contextInfo,
+            source: document.title || 'Unknown source'
+          };
+        })();
+      `
+    });
+    
+    if (results && results[0]) {
+      const result = results[0];
+      
+      if (result.success) {
+        const selectionData = {
+          id: Date.now(),
+          text: result.selectedText,
+          context: result.contextText,
+          source: result.source,
+          timestamp: new Date().toISOString()
+        };
+        
+        textSelectionContext.push(selectionData);
+        updateContextUI();
+        
+        logger.info('Text selection added to context:', result.selectedText.substring(0, 50) + '...');
+        addMessageToChat('system', `✅ Added selected text: "${result.selectedText.substring(0, 50)}${result.selectedText.length > 50 ? '...' : ''}" from ${result.source}`);
+      } else {
+        logger.warn('No text selected:', result.error);
+        addMessageToChat('system', `⚠️ ${result.error}. Please select some text first.`);
+      }
+    } else {
+      logger.error('Failed to execute selection script');
+      addMessageToChat('system', '❌ Failed to capture text selection');
+    }
+  } catch (error) {
+    logger.error('Error adding text selection to context:', error);
+    addMessageToChat('system', `❌ Error: ${error.message}`);
+  }
+  
+  closeContextDropdown();
 });
 
 // Update context indicator
 function updateContextUI() {
   const emailCount = emailContext.length;
   const contactCount = contactsContext.length;
-  const totalItems = emailCount + (contactCount > 0 ? 1 : 0); // Contacts count as 1 item
+  const selectionCount = textSelectionContext.length;
+  const totalItems = emailCount + (contactCount > 0 ? 1 : 0) + selectionCount; // Contacts count as 1 item
   
   if (totalItems === 0) {
     contextText.textContent = 'No context';
@@ -199,6 +324,9 @@ function updateContextUI() {
     }
     if (contactCount > 0) {
       parts.push(`${contactCount} contacts`);
+    }
+    if (selectionCount > 0) {
+      parts.push(`${selectionCount} selection${selectionCount > 1 ? 's' : ''}`);
     }
     contextText.textContent = parts.join(', ') + ' in context';
     
@@ -297,7 +425,7 @@ async function sendMessage() {
       throw new Error('API key not found');
     }
     
-    // Build context from emails and contacts
+    // Build context from emails, contacts, and text selections
     let contextContent = '';
     if (emailContext.length > 0) {
       contextContent = 'Here are the emails to analyze:\n\n';
@@ -317,6 +445,20 @@ async function sendMessage() {
         contextContent += `${contact.name} <${contact.email}>\n`;
       });
       contextContent += `\n--- End of contacts (${contactsContext.length} total) ---\n\n`;
+    }
+    
+    if (textSelectionContext.length > 0) {
+      contextContent += 'Here are text selections for reference:\n\n';
+      textSelectionContext.forEach((selection, idx) => {
+        contextContent += `--- Selection ${idx + 1} ---\n`;
+        contextContent += `Source: ${selection.source}\n`;
+        contextContent += `Selected text: ${selection.text}\n`;
+        if (selection.context && selection.context !== selection.text) {
+          contextContent += `Context: ${selection.context}\n`;
+        }
+        contextContent += `\n`;
+      });
+      contextContent += '--- End of text selections ---\n\n';
     }
     
     // Enhanced system prompt for email drafting
