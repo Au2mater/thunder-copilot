@@ -1,9 +1,7 @@
 // background.js
 // Minimal background to receive messages from sidebar and do heavy-lifting.
 
-self.addEventListener('install', () => {
-  console.log('Copilot background installed');
-});
+console.log('Copilot background script loaded');
 
 // message handler from sidebar/options
 browser.runtime.onMessage.addListener(async (msg, sender) => {
