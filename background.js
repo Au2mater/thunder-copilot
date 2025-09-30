@@ -123,6 +123,70 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
     }
   }
 
+  if (msg.type === 'getMessageContent') {
+    // Get full content of a specific message
+    try {
+      logger.debug('Getting message content for ID:', msg.messageId);
+      
+      const fullMessage = await browser.messages.getFull(msg.messageId);
+      let body = '';
+      
+      // Extract body content from message parts
+      if (fullMessage.parts) {
+        body = fullMessage.parts.map(part => part.body || '').join('\n');
+      }
+      
+      logger.info('Retrieved message content, body length:', body.length);
+      return { ok: true, body: body };
+    } catch (err) {
+      logger.error('Error getting message content:', err);
+      return { ok: false, error: String(err) };
+    }
+  }
+
+  if (msg.type === 'getSelectedEmails') {
+    // Get currently selected emails in Thunderbird
+    try {
+      logger.debug('Getting selected emails');
+      
+      // Get the active mail tab
+      const mailTabs = await browser.mailTabs.query({ active: true, currentWindow: true });
+      
+      if (!mailTabs || mailTabs.length === 0) {
+        logger.warn('No active mail tab found');
+        return { ok: false, error: 'No active mail tab found' };
+      }
+      
+      const mailTab = mailTabs[0];
+      logger.debug('Active mail tab ID:', mailTab.tabId);
+      
+      // Get selected messages
+      const selectedMessages = await browser.mailTabs.getSelectedMessages(mailTab.tabId);
+      
+      if (!selectedMessages || !selectedMessages.messages || selectedMessages.messages.length === 0) {
+        logger.info('No messages selected');
+        return { ok: true, messages: [] };
+      }
+      
+      logger.info('Found selected messages:', selectedMessages.messages.length);
+      
+      // Return the selected messages
+      return { 
+        ok: true, 
+        messages: selectedMessages.messages.map(msg => ({
+          id: msg.id,
+          subject: msg.subject || '(No Subject)',
+          author: msg.author || 'Unknown',
+          date: msg.date,
+          folder: msg.folder
+        }))
+      };
+    } catch (err) {
+      logger.error('Error getting selected emails:', err);
+      return { ok: false, error: String(err) };
+    }
+  }
+
   if (msg.type === 'createDraft') {
     // create a compose window prefilled and save it as a draft
     try {

@@ -13,7 +13,8 @@
 ## UI/UX Improvements
 - [ ] **Context management UI** - Improve context addition/removal interface
     - currently a static message is added to the chat when context is added
-    - instead mimic vscode github copilot style with multiselect fields added to the top of the chat input with x for each to remove
+    - no obvious way to remove context once added
+    - instead we want ti mimic modern "vscode github copilot" style with multiselect fields added to the top of the chat input with x for each to remove
 - [ ] **Pinned sidebar option** - Allow users to pin the sidebar for persistent access
     - research if Thunderbird supports pinned sidebars or other panes that allow an always-visible but hidable / collapsible sidebar / panel
 - [ ] **Text selection context button** - Add context option to capture selected text from any Thunderbird window

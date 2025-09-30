@@ -51,8 +51,10 @@ const contextText = document.getElementById('contextText');
 const apiWarning = document.getElementById('apiWarning');
 const openOptionsLink = document.getElementById('openOptions');
 const addCurrentEmailBtn = document.getElementById('addCurrentEmail');
+const addSelectedEmailsBtn = document.getElementById('addSelectedEmails');
 const addContactsBtn = document.getElementById('addContacts');
 const addTextSelectionBtn = document.getElementById('addTextSelection');
+const browseEmailsBtn = document.getElementById('browseEmails');
 const quickActionBtns = document.querySelectorAll('.quick-action-btn');
 
 // Helper function to close dropdown properly
@@ -91,6 +93,29 @@ async function checkApiKey() {
   }
 }
 
+// Check for selected emails and show/hide the option
+async function updateSelectedEmailsVisibility() {
+  try {
+    logger.debug('Checking for selected emails...');
+    const result = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
+    
+    if (result && result.ok && result.messages && result.messages.length > 0) {
+      logger.debug('Found selected emails:', result.messages.length);
+      addSelectedEmailsBtn.style.display = 'block';
+      
+      // Update the button text to show count
+      const count = result.messages.length;
+      addSelectedEmailsBtn.textContent = `Selected emails (${count})`;
+    } else {
+      logger.debug('No emails selected');
+      addSelectedEmailsBtn.style.display = 'none';
+    }
+  } catch (error) {
+    logger.error('Error checking selected emails:', error);
+    addSelectedEmailsBtn.style.display = 'none';
+  }
+}
+
 // Open options page
 openOptionsLink.addEventListener('click', (e) => {
   e.preventDefault();
@@ -111,13 +136,16 @@ quickActionBtns.forEach(btn => {
 });
 
 // Toggle context dropdown
-addContextBtn.addEventListener('click', (e) => {
+addContextBtn.addEventListener('click', async (e) => {
   e.stopPropagation();
   const isVisible = contextDropdown.style.display === 'block';
   
   if (isVisible) {
     contextDropdown.style.display = 'none';
   } else {
+    // Update selected emails visibility before showing dropdown
+    await updateSelectedEmailsVisibility();
+    
     // Show dropdown and calculate positioning
     contextDropdown.style.display = 'block';
     
@@ -305,6 +333,89 @@ addTextSelectionBtn.addEventListener('click', async () => {
   }
   
   closeContextDropdown();
+});
+
+// Add selected emails to context
+addSelectedEmailsBtn.addEventListener('click', async () => {
+  try {
+    logger.debug('Adding selected emails to context');
+    
+    const result = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
+    
+    if (!result || !result.ok) {
+      addMessageToChat('system', `❌ Failed to get selected emails: ${result?.error || 'Unknown error'}`);
+      closeContextDropdown();
+      return;
+    }
+    
+    const selectedEmails = result.messages || [];
+    
+    if (selectedEmails.length === 0) {
+      addMessageToChat('system', '❌ No emails selected in Thunderbird');
+      closeContextDropdown();
+      return;
+    }
+    
+    logger.info('Processing selected emails:', selectedEmails.length);
+    
+    // Get full content for each selected email
+    const emailsWithContent = [];
+    for (const email of selectedEmails) {
+      try {
+        const contentResult = await browser.runtime.sendMessage({
+          type: 'getMessageContent',
+          messageId: email.id
+        });
+        
+        if (contentResult && contentResult.ok) {
+          emailsWithContent.push({
+            ...email,
+            body: contentResult.body || ''
+          });
+        } else {
+          // Add email without body if content retrieval fails
+          emailsWithContent.push({
+            ...email,
+            body: ''
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to get content for email:', email.id, error);
+        emailsWithContent.push({
+          ...email,
+          body: ''
+        });
+      }
+    }
+    
+    // Add to context
+    if (emailContext.length > 0) {
+      emailContext.push(...emailsWithContent);
+    } else {
+      emailContext = emailsWithContent;
+    }
+    
+    updateContextUI();
+    addMessageToChat('system', `✅ Added ${emailsWithContent.length} selected emails to context`);
+    
+  } catch (error) {
+    logger.error('Error adding selected emails to context:', error);
+    addMessageToChat('system', `❌ Error: ${error.message}`);
+  }
+  
+  closeContextDropdown();
+});
+
+// Browse emails for context
+browseEmailsBtn.addEventListener('click', async () => {
+  try {
+    logger.debug('Opening email browser');
+    closeContextDropdown();
+    await showEmailBrowser();
+  } catch (error) {
+    logger.error('Error opening email browser:', error);
+    addMessageToChat('system', `❌ Error: ${error.message}`);
+  }
 });
 
 // Update context indicator
@@ -746,6 +857,318 @@ ${draftData.body || '(No body content)'}
   modal.appendChild(content);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+}
+
+// Show email browser modal for multiple email selection
+async function showEmailBrowser() {
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  `;
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80%;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+  `;
+  
+  const header = document.createElement('div');
+  header.style.cssText = `
+    padding: 16px 20px;
+    border-bottom: 1px solid #e1e5e9;
+    background: #f8f9fa;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `;
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Select Emails for Context';
+  title.style.cssText = 'margin: 0; font-size: 16px; color: #333;';
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = `
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+  `;
+  
+  // Search input
+  const searchContainer = document.createElement('div');
+  searchContainer.style.cssText = `
+    padding: 16px 20px;
+    border-bottom: 1px solid #e1e5e9;
+  `;
+  
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Search emails by subject, sender, or content...';
+  searchInput.style.cssText = `
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  `;
+  
+  searchContainer.appendChild(searchInput);
+  
+  // Email list container
+  const emailList = document.createElement('div');
+  emailList.style.cssText = `
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  `;
+  
+  // Selected emails display
+  const selectedContainer = document.createElement('div');
+  selectedContainer.style.cssText = `
+    padding: 16px 20px;
+    border-top: 1px solid #e1e5e9;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `;
+  
+  const selectedCount = document.createElement('span');
+  selectedCount.textContent = '0 emails selected';
+  selectedCount.style.cssText = 'font-size: 14px; color: #666;';
+  
+  const addSelectedBtn = document.createElement('button');
+  addSelectedBtn.textContent = 'Add to Context';
+  addSelectedBtn.disabled = true;
+  addSelectedBtn.style.cssText = `
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  `;
+  
+  let selectedEmails = [];
+  
+  // Function to update selected count
+  function updateSelectedCount() {
+    selectedCount.textContent = `${selectedEmails.length} email${selectedEmails.length !== 1 ? 's' : ''} selected`;
+    addSelectedBtn.disabled = selectedEmails.length === 0;
+    if (selectedEmails.length === 0) {
+      addSelectedBtn.style.background = '#ccc';
+      addSelectedBtn.style.cursor = 'not-allowed';
+    } else {
+      addSelectedBtn.style.background = '#28a745';
+      addSelectedBtn.style.cursor = 'pointer';
+    }
+  }
+  
+  // Function to load and display emails
+  async function loadEmails(searchQuery = '') {
+    try {
+      emailList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Loading emails...</div>';
+      
+      // Search for emails
+      const query = searchQuery ? { subjectContains: searchQuery } : {};
+      const result = await browser.runtime.sendMessage({ 
+        type: 'searchMessages', 
+        query: query 
+      });
+      
+      if (result.ok) {
+        emailList.innerHTML = '';
+        const messages = result.result.messages || [];
+        
+        if (messages.length === 0) {
+          emailList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No emails found</div>';
+          return;
+        }
+        
+        // Display messages
+        messages.slice(0, 50).forEach(message => { // Limit to 50 for performance
+          const emailItem = document.createElement('div');
+          emailItem.style.cssText = `
+            padding: 12px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+          `;
+          
+          const isSelected = selectedEmails.some(e => e.id === message.id);
+          if (isSelected) {
+            emailItem.style.background = '#e8f4f8';
+            emailItem.style.borderColor = '#007AFF';
+          }
+          
+          emailItem.innerHTML = `
+            <div style="font-weight: 500; margin-bottom: 4px; font-size: 14px;">${escapeHtml(message.subject || '(No subject)')}</div>
+            <div style="color: #666; font-size: 13px; margin-bottom: 4px;">From: ${escapeHtml(message.author || 'Unknown')}</div>
+            <div style="color: #999; font-size: 12px;">${new Date(message.date).toLocaleDateString()}</div>
+          `;
+          
+          emailItem.addEventListener('click', () => {
+            const selectedIndex = selectedEmails.findIndex(e => e.id === message.id);
+            if (selectedIndex >= 0) {
+              // Remove from selection
+              selectedEmails.splice(selectedIndex, 1);
+              emailItem.style.background = '';
+              emailItem.style.borderColor = '#e1e5e9';
+            } else {
+              // Add to selection
+              selectedEmails.push(message);
+              emailItem.style.background = '#e8f4f8';
+              emailItem.style.borderColor = '#007AFF';
+            }
+            updateSelectedCount();
+          });
+          
+          emailItem.addEventListener('mouseenter', () => {
+            if (!selectedEmails.some(e => e.id === message.id)) {
+              emailItem.style.background = '#f8f9fa';
+            }
+          });
+          
+          emailItem.addEventListener('mouseleave', () => {
+            if (!selectedEmails.some(e => e.id === message.id)) {
+              emailItem.style.background = '';
+            }
+          });
+          
+          emailList.appendChild(emailItem);
+        });
+        
+        if (messages.length > 50) {
+          const moreInfo = document.createElement('div');
+          moreInfo.style.cssText = 'padding: 12px; text-align: center; color: #666; font-style: italic;';
+          moreInfo.textContent = `Showing first 50 of ${messages.length} emails. Use search to narrow results.`;
+          emailList.appendChild(moreInfo);
+        }
+      } else {
+        emailList.innerHTML = `<div style="padding: 20px; text-align: center; color: #d32f2f;">Error loading emails: ${result.error}</div>`;
+      }
+    } catch (error) {
+      logger.error('Error loading emails:', error);
+      emailList.innerHTML = `<div style="padding: 20px; text-align: center; color: #d32f2f;">Error: ${error.message}</div>`;
+    }
+  }
+  
+  // Search functionality
+  let searchTimeout;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      loadEmails(searchInput.value.trim());
+    }, 300);
+  });
+  
+  // Close handlers
+  const closeModal = () => overlay.remove();
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+  
+  // Add selected emails handler
+  addSelectedBtn.addEventListener('click', async () => {
+    if (selectedEmails.length === 0) return;
+    
+    try {
+      // Get full email content for selected emails
+      for (const email of selectedEmails) {
+        // Check if already in context
+        const exists = emailContext.some(e => e.id === email.id);
+        
+        if (!exists) {
+          // Get full email content
+          const fullMessage = await browser.runtime.sendMessage({
+            type: 'getMessageContent',
+            messageId: email.id
+          });
+          
+          if (fullMessage && fullMessage.ok) {
+            emailContext.push({
+              id: email.id,
+              subject: email.subject,
+              author: email.author,
+              date: email.date,
+              body: fullMessage.body || ''
+            });
+          } else {
+            // Fallback to basic info
+            emailContext.push({
+              id: email.id,
+              subject: email.subject,
+              author: email.author,
+              date: email.date,
+              body: ''
+            });
+          }
+        }
+      }
+      
+      updateContextUI();
+      addMessageToChat('system', `✅ Added ${selectedEmails.length} email${selectedEmails.length !== 1 ? 's' : ''} to context`);
+      closeModal();
+    } catch (error) {
+      logger.error('Error adding emails to context:', error);
+      addMessageToChat('system', `❌ Error adding emails: ${error.message}`);
+    }
+  });
+  
+  // Build modal
+  selectedContainer.appendChild(selectedCount);
+  selectedContainer.appendChild(addSelectedBtn);
+  
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  
+  modal.appendChild(header);
+  modal.appendChild(searchContainer);
+  modal.appendChild(emailList);
+  modal.appendChild(selectedContainer);
+  
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  
+  // Load initial emails
+  await loadEmails();
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Send button click
