@@ -1,4 +1,3 @@
-// context-manager.js - Manages all context-related functionality
 
 const ContextManager = {
   // Context storage
@@ -12,12 +11,57 @@ const ContextManager = {
   addSelectedEmailsBtn: null,
   contextPillsInline: null,
 
+
   // Initialize with DOM references
   init: function(domRefs) {
     this.contextText = domRefs.contextText;
     this.chatMessages = domRefs.chatMessages;
     this.addSelectedEmailsBtn = domRefs.addSelectedEmailsBtn;
     this.contextPillsInline = domRefs.contextPillsInline;
+  },
+
+  // Show/hide context dropdown options based on current state
+  updateContextDropdownVisibility: async function() {
+    // Selected Text
+    let hasSelection = false;
+    try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tabs && tabs.length > 0) {
+        const results = await browser.tabs.executeScript(tabs[0].id, {
+          code: 'window.getSelection && window.getSelection().toString().trim().length > 0'
+        });
+        hasSelection = results && results[0];
+      }
+    } catch (e) { hasSelection = false; }
+    const addTextSelection = document.getElementById('addTextSelection');
+    if (addTextSelection) addTextSelection.style.display = hasSelection ? 'block' : 'none';
+
+    // Current Email
+    let hasCurrentEmail = false;
+    try {
+      const r = await browser.runtime.sendMessage({ type: 'getDisplayedMessage' });
+      hasCurrentEmail = r && r.ok && r.message;
+    } catch (e) { hasCurrentEmail = false; }
+    const addCurrentEmail = document.getElementById('addCurrentEmail');
+    if (addCurrentEmail) addCurrentEmail.style.display = hasCurrentEmail ? 'block' : 'none';
+
+    // Selected Emails
+    let hasSelectedEmails = false;
+    try {
+      const r = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
+      hasSelectedEmails = r && r.ok && r.messages && r.messages.length > 0;
+    } catch (e) { hasSelectedEmails = false; }
+    const addSelectedEmails = document.getElementById('addSelectedEmails');
+    if (addSelectedEmails) addSelectedEmails.style.display = hasSelectedEmails ? 'block' : 'none';
+
+    // Contacts
+    let hasContacts = false;
+    try {
+      const r = await browser.runtime.sendMessage({ type: 'getContacts' });
+      hasContacts = r && r.ok && r.contacts && r.contacts.length > 0;
+    } catch (e) { hasContacts = false; }
+    const addContacts = document.getElementById('addContacts');
+    if (addContacts) addContacts.style.display = hasContacts ? 'block' : 'none';
   },
 
   // Update context indicator UI and render pills
