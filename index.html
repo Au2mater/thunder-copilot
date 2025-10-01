@@ -77,6 +77,11 @@
       position: relative;
       margin-right: 2px;
     }
+    
+    .add-tool-btn.tools-active {
+      background-color: #005cb9;
+      box-shadow: 0 2px 8px rgba(0, 92, 185, 0.3);
+    }
 
     .tool-counter-badge {
       display: none;
@@ -709,6 +714,69 @@
         transform: rotate(360deg);
       }
     }
+
+    /* Tool dropdown styling */
+    .dropdown-header {
+      padding: 6px 12px;
+      font-weight: bold;
+      font-size: 12px;
+      color: #555;
+      background-color: var(--grey-1);
+      border-bottom: 1px solid var(--grey-2);
+    }
+
+    .tools-container {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      gap: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .tool-item:last-child {
+      border-bottom: none;
+    }
+
+    .tool-checkbox {
+      margin: 0;
+    }
+
+    .tool-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .tool-icon {
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    .tool-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tool-description {
+      font-size: 12px;
+      color: #666;
+      display: none; /* Hide the description to save space */
+    }
+    
+    .tool-item:hover .tool-description {
+      display: none; /* Keep description hidden even on hover */
+    }
   </style>
 </head>
 
@@ -751,8 +819,8 @@
           <div class="input-header">
             <div class="context-area">
               <div class="context-btn-container" id="contextBtnContainer">
-                <button class="add-context-btn add-tool-btn" id="addToolBtn">
-                  <span class="material-icons">construction</span>
+                <button class="add-context-btn add-tool-btn" id="addToolBtn" title="Select AI Tools">
+                  <span class="material-icons">construction</span> Tools
                   <span id="toolCounterBadge" class="tool-counter-badge">0</span>
                 </button>
                 <button class="add-context-btn" id="addContextBtn" style="margin-right:2px;"><span
@@ -772,12 +840,7 @@
                   </div>
                 </div>
                 <div class="context-dropdown tool-dropdown" id="toolDropdown">
-                  <label class="context-option" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                    <input type="checkbox" class="tool-checkbox" value="draftEmail" id="toolDraftEmail"
-                      style="margin-right:8px;">
-                    <span class="material-icons">mail</span> Draft Email
-                  </label>
-                  <!-- Add more tools here as needed -->
+                  <!-- Tool options populated dynamically by AIIntegration.populateToolDropdown() -->
                 </div>
               </div>
             </div>

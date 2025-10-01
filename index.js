@@ -494,21 +494,86 @@ toolDropdown.addEventListener('click', (e) => {
   e.stopPropagation();
 });
 
-// Tool checklist logic
-const toolCheckboxes = toolDropdown.querySelectorAll('.tool-checkbox');
-toolCheckboxes.forEach(checkbox => {
-  checkbox.addEventListener('change', (e) => {
-    const tool = checkbox.value;
-    if (checkbox.checked) {
-      if (!enabledTools.includes(tool)) enabledTools.push(tool);
-    } else {
-      enabledTools = enabledTools.filter(t => t !== tool);
+// Load saved tool preferences when the page loads
+async function loadToolPreferences() {
+  try {
+    const settings = await browser.storage.local.get('enabledTools');
+    if (settings.enabledTools && Array.isArray(settings.enabledTools)) {
+      enabledTools = settings.enabledTools;
+      
+      // Update UI to match saved preferences
+      syncToolChecklistUI();
+      
+      // Update the AI integration tool state
+      updateAIToolState();
     }
-    // Update tool state for AIIntegration
-    if (tool === 'draftEmail') AIIntegration.toolState.draftEmail = checkbox.checked;
-    updateToolCounterBadge();
+  } catch (error) {
+    console.error('Error loading tool preferences:', error);
+  }
+}
+
+// Save tool preferences to storage
+async function saveToolPreferences() {
+  try {
+    await browser.storage.local.set({ enabledTools });
+    console.log('Tool preferences saved:', enabledTools);
+  } catch (error) {
+    console.error('Error saving tool preferences:', error);
+  }
+}
+
+// Update AI Integration tool state based on enabled tools
+function updateAIToolState() {
+  // First, reset all tools to false
+  if (typeof AIIntegration !== 'undefined' && AIIntegration.tools) {
+    // Reset all tools to false first
+    AIIntegration.tools.forEach(tool => {
+      AIIntegration.toolState[tool.id] = false;
+    });
+    
+    // Then enable only the ones in the enabledTools array
+    enabledTools.forEach(toolId => {
+      if (AIIntegration.toolState.hasOwnProperty(toolId)) {
+        AIIntegration.toolState[toolId] = true;
+      }
+    });
+    
+    Utils.logger.info('AI Tool State updated:', JSON.stringify(AIIntegration.toolState));
+  } else {
+    console.error('AIIntegration not available for updating tool state');
+  }
+}
+
+// No longer needed - we use AIIntegration.populateToolDropdown directly
+
+// Attach event listeners to tool checkboxes
+function attachToolCheckboxListeners() {
+  const toolCheckboxes = toolDropdown.querySelectorAll('.tool-checkbox');
+  toolCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      handleToolCheckboxChange(this);
+    });
   });
-});
+}
+
+// Handle tool checkbox change
+function handleToolCheckboxChange(checkbox) {
+  const tool = checkbox.value;
+  if (checkbox.checked) {
+    if (!enabledTools.includes(tool)) enabledTools.push(tool);
+  } else {
+    enabledTools = enabledTools.filter(t => t !== tool);
+  }
+  
+  // Update the AI integration tool state
+  updateAIToolState();
+  
+  // Update the badge
+  updateToolCounterBadge();
+  
+  // Save preferences
+  saveToolPreferences();
+}
 
 function updateToolCounterBadge() {
   if (toolCounterBadge) {
@@ -516,23 +581,36 @@ function updateToolCounterBadge() {
     if (count > 0) {
       toolCounterBadge.textContent = count;
       toolCounterBadge.style.display = 'block';
+      
+      // Update button style to indicate active tools
+      const toolsButton = document.getElementById('tools-button') || document.getElementById('addToolBtn');
+      if (toolsButton) {
+        toolsButton.classList.add('tools-active');
+      }
     } else {
       toolCounterBadge.style.display = 'none';
+      
+      // Reset button style when no tools are active
+      const toolsButton = document.getElementById('tools-button') || document.getElementById('addToolBtn');
+      if (toolsButton) {
+        toolsButton.classList.remove('tools-active');
+      }
     }
   }
 }
 
 // On load, sync checkboxes and badge
 function syncToolChecklistUI() {
-  const toolCheckboxes = toolDropdown.querySelectorAll('.tool-checkbox');
-  toolCheckboxes.forEach(checkbox => {
-    checkbox.checked = enabledTools.includes(checkbox.value);
-  });
+  // Repopulate the tool dropdown with our centralized tool definitions
+  if (typeof AIIntegration !== 'undefined') {
+    AIIntegration.populateToolDropdown(toolDropdown);
+    // Re-attach event listeners
+    attachToolCheckboxListeners();
+  } else {
+    console.error('AIIntegration not available for tool dropdown population');
+  }
   updateToolCounterBadge();
 }
-
-// If tools are set programmatically, call syncToolChecklistUI()
-// (e.g., after AIIntegration/toolState changes)
 
 // Optionally, expose enabledTools for other modules
 window.getEnabledTools = () => [...enabledTools];
@@ -935,6 +1013,11 @@ async function initialize() {
     // Check API key and update UI
     if (typeof AIIntegration !== 'undefined') {
       await AIIntegration.checkApiKey(apiWarning);
+      
+      // Initialize the tool dropdown using AIIntegration's method
+      AIIntegration.populateToolDropdown(toolDropdown);
+      // Re-attach event listeners
+      attachToolCheckboxListeners();
     } else {
       console.error('AIIntegration not available for API key check');
     }
@@ -973,7 +1056,10 @@ document.addEventListener('DOMContentLoaded', () => {
     typeof UIComponents !== 'undefined' &&
     typeof ContextManager !== 'undefined' &&
     typeof AIIntegration !== 'undefined') {
-    initialize();
+    // Load tool preferences first
+    loadToolPreferences().then(() => {
+      initialize();
+    });
   } else {
     console.error('Not all modules loaded properly');
     setTimeout(() => {
@@ -981,7 +1067,10 @@ document.addEventListener('DOMContentLoaded', () => {
         typeof UIComponents !== 'undefined' &&
         typeof ContextManager !== 'undefined' &&
         typeof AIIntegration !== 'undefined') {
-        initialize();
+        // Load tool preferences first
+        loadToolPreferences().then(() => {
+          initialize();
+        });
       } else {
         console.error('Modules still not loaded, check console for errors');
       }

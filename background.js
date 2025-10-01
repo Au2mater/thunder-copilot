@@ -639,6 +639,51 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
       return { ok: false, error: String(err) };
     }
   }
+  
+  // Handler for function calling draft creation
+  if (msg.type === 'createDraftWithData' || (msg.type === 'createDraft' && msg.draftData)) {
+    try {
+      // Extract draft data from either msg.draftData or directly from msg
+      const draftData = msg.draftData || msg;
+      
+      logger.info('Creating draft from function calling with data:', JSON.stringify(draftData));
+      logger.debug(`Draft recipients: ${JSON.stringify(draftData.to || [])}`);
+      logger.debug(`Draft subject: ${draftData.subject || ''}`);
+      logger.debug(`Draft body length: ${draftData.body ? draftData.body.length : 0}`);
+      
+      // Create compose details object from draft data
+      const composeDetails = {
+        to: draftData.to || [],
+        subject: draftData.subject || '',
+        body: draftData.body || ''
+      };
+      
+      // Begin new compose window with draft data - using null for tabId to create a new tab
+      logger.debug('About to call beginNew with compose details:', JSON.stringify(composeDetails));
+      const result = await browser.compose.beginNew(composeDetails);
+      
+      if (result && result.id) {
+        logger.info('Draft created successfully with compose ID:', result.id);
+        return { 
+          success: true, 
+          message: 'Email draft created successfully',
+          draftId: result.id
+        };
+      } else {
+        logger.warn('Draft creation returned without error but no result ID');
+        return {
+          success: false,
+          error: 'Could not create draft (no compose ID returned)'
+        };
+      }
+    } catch (error) {
+      logger.error('Error creating draft from function calling:', error);
+      return {
+        success: false,
+        error: error.message || 'Error creating email draft'
+      };
+    }
+  }
 
   if (msg.type === 'generateICS') {
     // msg.events: array of event objects -> returns a blob URL
