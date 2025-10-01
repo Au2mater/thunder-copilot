@@ -15,9 +15,92 @@ const addSelectedEmailsBtn = document.getElementById('addSelectedEmails');
 const addContactsBtn = document.getElementById('addContacts');
 const addTextSelectionBtn = document.getElementById('addTextSelection');
 const browseEmailsBtn = document.getElementById('browseEmails');
+
 const quickActionBtns = document.querySelectorAll('.quick-action-btn');
 const clearChatBtn = document.getElementById('clearChatBtn');
 const chatHeader = document.getElementById('chatHeader');
+
+// Tool dropdown elements
+const addToolBtn = document.getElementById('addToolBtn');
+const toolDropdown = document.getElementById('toolDropdown');
+const toolBtnContainer = document.getElementById('toolBtnContainer');
+const toolCounterBadge = document.getElementById('toolCounterBadge');
+
+// Track enabled tools (for checklist)
+let enabledTools = [];
+
+// --- TOOL DROPDOWN LOGIC (Checklist) ---
+addToolBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isVisible = toolDropdown.style.display === 'block';
+  if (isVisible) {
+    toolDropdown.style.display = 'none';
+  } else {
+    toolDropdown.style.display = 'block';
+    // Positioning logic if needed (similar to contextDropdown)
+    const dropdownRect = toolDropdown.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - dropdownRect.bottom;
+    if (spaceBelow < 20) {
+      toolDropdown.classList.add('dropdown-up');
+    } else {
+      toolDropdown.classList.remove('dropdown-up');
+    }
+  }
+});
+
+// Close tool dropdown when clicking outside
+document.addEventListener('click', () => {
+  toolDropdown.style.display = 'none';
+});
+
+// Prevent dropdown from closing when clicking inside
+toolDropdown.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+// Tool checklist logic
+const toolCheckboxes = toolDropdown.querySelectorAll('.tool-checkbox');
+toolCheckboxes.forEach(checkbox => {
+  checkbox.addEventListener('change', (e) => {
+    const tool = checkbox.value;
+    if (checkbox.checked) {
+      if (!enabledTools.includes(tool)) enabledTools.push(tool);
+    } else {
+      enabledTools = enabledTools.filter(t => t !== tool);
+    }
+    // Update tool state for AIIntegration
+    if (tool === 'draftEmail') AIIntegration.toolState.draftEmail = checkbox.checked;
+    updateToolCounterBadge();
+  });
+});
+
+function updateToolCounterBadge() {
+  if (toolCounterBadge) {
+    const count = enabledTools.length;
+    if (count > 0) {
+      toolCounterBadge.textContent = count;
+      toolCounterBadge.style.display = 'block';
+    } else {
+      toolCounterBadge.style.display = 'none';
+    }
+  }
+}
+
+// On load, sync checkboxes and badge
+function syncToolChecklistUI() {
+  const toolCheckboxes = toolDropdown.querySelectorAll('.tool-checkbox');
+  toolCheckboxes.forEach(checkbox => {
+    checkbox.checked = enabledTools.includes(checkbox.value);
+  });
+  updateToolCounterBadge();
+}
+
+// If tools are set programmatically, call syncToolChecklistUI()
+// (e.g., after AIIntegration/toolState changes)
+
+// Optionally, expose enabledTools for other modules
+window.getEnabledTools = () => [...enabledTools];
 
 // Conversation state tracking
 let conversationStarted = false;
@@ -59,7 +142,7 @@ function autoResizeTextarea() {
 function updateQuickActionsVisibility() {
   const quickActionsContainer = document.querySelector('.quick-actions');
   if (!quickActionsContainer) return;
-  
+
   if (conversationStarted) {
     quickActionsContainer.classList.add('hidden');
     if (chatHeader) chatHeader.classList.add('visible');
@@ -72,10 +155,10 @@ function updateQuickActionsVisibility() {
 // Check if conversation has messages
 function checkConversationState() {
   const messages = chatMessages.querySelectorAll('.message:not(.system)');
-  const hasUserMessages = Array.from(messages).some(msg => 
+  const hasUserMessages = Array.from(messages).some(msg =>
     msg.classList.contains('user') || msg.classList.contains('assistant')
   );
-  
+
   if (hasUserMessages !== conversationStarted) {
     conversationStarted = hasUserMessages;
     updateQuickActionsVisibility();
@@ -87,7 +170,7 @@ function clearConversation() {
   // Remove all non-system messages
   const messages = chatMessages.querySelectorAll('.message:not(.system)');
   messages.forEach(msg => msg.remove());
-  
+
   // Reset conversation state
   conversationStarted = false;
   updateQuickActionsVisibility();
@@ -122,7 +205,7 @@ quickActionBtns.forEach(btn => {
 addContextBtn.addEventListener('click', async (e) => {
   e.stopPropagation();
   const isVisible = contextDropdown.style.display === 'block';
-  
+
   if (isVisible) {
     contextDropdown.style.display = 'none';
   } else {
@@ -134,15 +217,15 @@ addContextBtn.addEventListener('click', async (e) => {
         console.error('Error updating selected emails visibility:', error);
       }
     }
-    
+
     // Show dropdown and calculate positioning
     contextDropdown.style.display = 'block';
-    
+
     // Check if dropdown would be clipped at bottom
     const dropdownRect = contextDropdown.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const spaceBelow = viewportHeight - dropdownRect.bottom;
-    
+
     // If not enough space below (less than 20px margin), show above
     if (spaceBelow < 20) {
       contextDropdown.classList.add('dropdown-up');
@@ -177,7 +260,7 @@ addCurrentEmailBtn.addEventListener('click', async () => {
       console.error('Error adding current email:', error);
     }
   }
-  
+
   if (typeof Utils !== 'undefined') {
     Utils.closeContextDropdown(contextDropdown);
   } else {
@@ -193,7 +276,7 @@ addSelectedEmailsBtn.addEventListener('click', async () => {
       console.error('Error adding selected emails:', error);
     }
   }
-  
+
   if (typeof Utils !== 'undefined') {
     Utils.closeContextDropdown(contextDropdown);
   } else {
@@ -209,7 +292,7 @@ addContactsBtn.addEventListener('click', async () => {
       console.error('Error adding contacts:', error);
     }
   }
-  
+
   if (typeof Utils !== 'undefined') {
     Utils.closeContextDropdown(contextDropdown);
   } else {
@@ -225,7 +308,7 @@ addTextSelectionBtn.addEventListener('click', async () => {
       console.error('Error adding text selection:', error);
     }
   }
-  
+
   if (typeof Utils !== 'undefined') {
     Utils.closeContextDropdown(contextDropdown);
   } else {
@@ -242,7 +325,7 @@ browseEmailsBtn.addEventListener('click', async () => {
       console.log('Opening email browser');
       contextDropdown.style.display = 'none';
     }
-    
+
     if (typeof ContextManager !== 'undefined') {
       await ContextManager.showEmailBrowser();
     } else {
@@ -250,7 +333,7 @@ browseEmailsBtn.addEventListener('click', async () => {
     }
   } catch (error) {
     console.error('Error opening email browser:', error);
-    
+
     if (typeof UIComponents !== 'undefined') {
       UIComponents.addMessageToChat(chatMessages, 'system', `❌ Error: ${error.message}`);
     }
@@ -260,28 +343,28 @@ browseEmailsBtn.addEventListener('click', async () => {
 // Send message function
 async function sendMessage() {
   const userMessage = promptTextarea.value.trim();
-  
+
   if (!userMessage) {
     return;
   }
-  
+
   // Mark conversation as started
   if (!conversationStarted) {
     conversationStarted = true;
     updateQuickActionsVisibility();
   }
-  
+
   // Clear input
   promptTextarea.value = '';
   autoResizeTextarea();
-  
+
   // Send to AI
   if (typeof AIIntegration !== 'undefined') {
     try {
       await AIIntegration.sendMessage(userMessage, sendBtn);
     } catch (error) {
       console.error('Error sending message:', error);
-      
+
       // Fallback error display
       if (typeof UIComponents !== 'undefined') {
         UIComponents.addMessageToChat(chatMessages, 'system', `❌ Error: ${error.message}`);
@@ -295,7 +378,7 @@ async function sendMessage() {
     }
   } else {
     console.error('AIIntegration not loaded');
-    
+
     // Simple fallback
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message system';
@@ -318,7 +401,7 @@ promptTextarea.addEventListener('keydown', (e) => {
 // Initialize application
 async function initialize() {
   console.log('Initializing modern chat UI');
-  
+
   try {
     // Check API key and update UI
     if (typeof AIIntegration !== 'undefined') {
@@ -326,17 +409,17 @@ async function initialize() {
     } else {
       console.error('AIIntegration not available for API key check');
     }
-    
+
     // Update context UI
     if (typeof ContextManager !== 'undefined') {
       ContextManager.updateContextUI();
     } else {
       console.error('ContextManager not available for context UI update');
     }
-    
+
     // Initialize quick actions visibility
     updateQuickActionsVisibility();
-    
+
     // Welcome message
     if (typeof UIComponents !== 'undefined') {
       UIComponents.addMessageToChat(chatMessages, 'system', '👋 Welcome! I can help you analyze your emails. Add some context and ask me anything!');
@@ -364,7 +447,7 @@ async function initialize() {
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.openaiApiKey) {
     console.log('API key changed, rechecking...');
-    
+
     if (typeof AIIntegration !== 'undefined') {
       AIIntegration.checkApiKey(apiWarning);
     } else {
@@ -376,18 +459,18 @@ browser.storage.onChanged.addListener((changes, area) => {
 // Start the application
 document.addEventListener('DOMContentLoaded', () => {
   // Ensure all modules are loaded before initializing
-  if (typeof Utils !== 'undefined' && 
-      typeof UIComponents !== 'undefined' && 
-      typeof ContextManager !== 'undefined' && 
-      typeof AIIntegration !== 'undefined') {
+  if (typeof Utils !== 'undefined' &&
+    typeof UIComponents !== 'undefined' &&
+    typeof ContextManager !== 'undefined' &&
+    typeof AIIntegration !== 'undefined') {
     initialize();
   } else {
     console.error('Not all modules loaded properly');
     setTimeout(() => {
-      if (typeof Utils !== 'undefined' && 
-          typeof UIComponents !== 'undefined' && 
-          typeof ContextManager !== 'undefined' && 
-          typeof AIIntegration !== 'undefined') {
+      if (typeof Utils !== 'undefined' &&
+        typeof UIComponents !== 'undefined' &&
+        typeof ContextManager !== 'undefined' &&
+        typeof AIIntegration !== 'undefined') {
         initialize();
       } else {
         console.error('Modules still not loaded, check console for errors');
