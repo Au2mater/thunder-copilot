@@ -18,6 +18,7 @@
     "storage",
     "addressBooks",
     "accountsRead",
+    "accountsFolders",
     "notifications",
     "tabs",
     "activeTab",
@@ -25,12 +26,16 @@
   ],
   "browser_action": {
     "default_title": "Copilot",
-    "default_popup": "index.html",
     "default_icon": "icons/icon-48.png"
   },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
+  },
+  "compose_action": {
+    "default_title": "Edit with Copilot",
+    "default_icon": "icons/icon-48.png",
+    "default_popup": "compose-action-popup.html"
   },
   "browser_specific_settings": {
     "gecko": {

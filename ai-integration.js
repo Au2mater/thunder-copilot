@@ -141,7 +141,7 @@ const AIIntegration = {
       Utils.logger.info('Creating email draft with data:', draftData);
       // Check if compose API is available
       if (!browser.compose || typeof browser.compose.beginNew !== 'function') {
-        UIComponents.addMessageToChat(this.chatMessages, 'system', '❌ Error: Compose API is not available in this environment.');
+        UIComponents.addMessageToChat(this.chatMessages, 'system', 'Error: Cannot create draft in this environment.');
         Utils.logger.error('Compose API is not available.');
         return;
       }

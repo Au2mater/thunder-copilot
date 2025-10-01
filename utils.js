@@ -56,7 +56,7 @@ const Utils = {
   // Helper to close dropdown properly
   closeContextDropdown: function(contextDropdown) {
     contextDropdown.style.display = 'none';
-    contextDropdown.classList.remove('dropdown-up');
+    // Keep the dropdown-up class so it's consistent when reopened
   },
   
   // Parse email draft from AI response

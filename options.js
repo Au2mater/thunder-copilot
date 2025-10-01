@@ -4,6 +4,8 @@ const apiKeyInput = document.getElementById('apiKey');
 const saveBtn = document.getElementById('saveBtn');
 const statusDiv = document.getElementById('status');
 const keyIndicator = document.getElementById('keyIndicator');
+const debugModeToggle = document.getElementById('debugModeToggle');
+const openDebugBtn = document.getElementById('openDebugBtn');
 
 // Validate API key format
 function validateApiKey(key) {
@@ -36,10 +38,17 @@ apiKeyInput.addEventListener('input', updateKeyIndicator);
 // Load saved settings on page load
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const settings = await browser.storage.local.get('openaiApiKey');
+    const settings = await browser.storage.local.get(['openaiApiKey', 'debugMode']);
+    
+    // Set API Key
     if (settings.openaiApiKey) {
       apiKeyInput.value = settings.openaiApiKey;
       updateKeyIndicator();
+    }
+    
+    // Set Debug Mode toggle
+    if (debugModeToggle) {
+      debugModeToggle.checked = settings.debugMode === true;
     }
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -98,3 +107,24 @@ apiKeyInput.addEventListener('keydown', (e) => {
     saveBtn.click();
   }
 });
+
+// Debug mode toggle functionality
+if (debugModeToggle) {
+  debugModeToggle.addEventListener('change', async () => {
+    try {
+      await browser.storage.local.set({ debugMode: debugModeToggle.checked });
+      showStatus(`Debug mode ${debugModeToggle.checked ? 'enabled' : 'disabled'}`, 'success');
+    } catch (error) {
+      console.error('Error saving debug mode setting:', error);
+      showStatus('Error saving debug mode setting', 'error');
+    }
+  });
+}
+
+// Open Debug Page button
+if (openDebugBtn) {
+  openDebugBtn.addEventListener('click', () => {
+    const url = browser.runtime.getURL('debug.html');
+    browser.windows.create({ url, type: 'popup', width: 900, height: 700 });
+  });
+}

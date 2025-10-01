@@ -10,6 +10,50 @@ const ContextManager = {
   chatMessages: null,
   addSelectedEmailsBtn: null,
   contextPillsInline: null,
+  
+  // General utility function to check if an item already exists in context
+  isItemDuplicate: function(item, type) {
+    if (!item) {
+      Utils.logger.warn('Invalid item passed to isItemDuplicate:', item);
+      return false;
+    }
+    
+    switch(type) {
+      case 'email':
+        // Check by email id
+        if (!item.id) {
+          Utils.logger.warn('Email without ID passed to isItemDuplicate');
+          return false;
+        }
+        
+        // Initialize tracking set if needed (for cross-function checking)
+        window.addedEmailIds = window.addedEmailIds || new Set();
+        
+        // First check context
+        const isDuplicateInContext = this.emailContext.some(e => e.id === item.id);
+        if (isDuplicateInContext) {
+          Utils.logger.debug(`Email ID ${item.id} is already in context. Subject: ${item.subject || 'unknown'}`);
+          // Also add to global tracking set for consistency
+          window.addedEmailIds.add(item.id);
+          return true;
+        }
+        
+        return false;
+      
+      case 'contact':
+        // Check by email address (more reliable than name)
+        return this.contactsContext.some(c => c.email === item.email);
+      
+      case 'selection':
+        // Check for exact text match and source
+        return this.textSelectionContext.some(s => 
+          s.text === item.text && s.source === item.source);
+      
+      default:
+        Utils.logger.warn('Unknown context item type:', type);
+        return false;
+    }
+  },
 
 
   // Initialize with DOM references
@@ -27,46 +71,162 @@ const ContextManager = {
     try {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs && tabs.length > 0) {
-        const results = await browser.tabs.executeScript(tabs[0].id, {
-          code: 'window.getSelection && window.getSelection().toString().trim().length > 0'
-        });
-        hasSelection = results && results[0];
+        // Try to execute the script to check for selection
+        try {
+          const results = await browser.tabs.executeScript(tabs[0].id, {
+            code: 'window.getSelection && window.getSelection().toString().trim().length > 0'
+          });
+          hasSelection = results && results[0];
+          Utils.logger.debug('Text selection check result:', hasSelection);
+        } catch (scriptErr) {
+          Utils.logger.debug('Could not check for text selection:', scriptErr.message);
+          // If we can't execute the script, assume no selection
+          hasSelection = false;
+        }
       }
-    } catch (e) { hasSelection = false; }
+    } catch (e) {
+      Utils.logger.error('Error checking for text selection:', e);
+      hasSelection = false;
+    }
+    
     const addTextSelection = document.getElementById('addTextSelection');
-    if (addTextSelection) addTextSelection.style.display = hasSelection ? 'block' : 'none';
+    if (addTextSelection) {
+      addTextSelection.style.display = hasSelection ? 'block' : 'none';
+    }
 
-    // Current Email
+    // Current Email - Check with background script and check if it's already in context
     let hasCurrentEmail = false;
     try {
-      const r = await browser.runtime.sendMessage({ type: 'getDisplayedMessage' });
-      hasCurrentEmail = r && r.ok && r.message;
-    } catch (e) { hasCurrentEmail = false; }
+      const currentEmailResult = await browser.runtime.sendMessage({ 
+        type: 'getCurrentDisplayedEmailForContext',
+        checkExistenceOnly: false, // Need message data to check duplicates
+        fromStandaloneWindow: window.opener == null
+      });
+      
+      // Only continue if we have a valid result and an email exists
+      if (currentEmailResult && currentEmailResult.ok && currentEmailResult.message) {
+        // Check if this email is already in our context
+        const emailExists = this.emailContext.some(email => email.id === currentEmailResult.message.id);
+        
+        // Only show if there's an email and it's NOT already in context
+        hasCurrentEmail = currentEmailResult.message && !emailExists;
+        Utils.logger.debug('Current email check result:', currentEmailResult.ok, 'Already in context:', emailExists);
+        
+        // Set the option text
+        const addCurrentEmailText = document.querySelector('#addCurrentEmail > span:nth-child(2)');
+        if (addCurrentEmailText) {
+          addCurrentEmailText.textContent = 'Current Email';
+        }
+      } else {
+        hasCurrentEmail = false;
+      }
+    } catch (e) {
+      Utils.logger.error('Error checking for current email:', e);
+      hasCurrentEmail = false;
+    }
+    
     const addCurrentEmail = document.getElementById('addCurrentEmail');
-    if (addCurrentEmail) addCurrentEmail.style.display = hasCurrentEmail ? 'block' : 'none';
+    if (addCurrentEmail) {
+      // Only show the option if we have a current email that's not already in context
+      addCurrentEmail.style.display = hasCurrentEmail ? 'block' : 'none';
+    }
 
-    // Selected Emails
+    // Selected Emails - Check with background script and check if any are new
     let hasSelectedEmails = false;
     try {
-      const r = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
-      hasSelectedEmails = r && r.ok && r.messages && r.messages.length > 0;
-    } catch (e) { hasSelectedEmails = false; }
+      const selectedEmailsResult = await browser.runtime.sendMessage({ 
+        type: 'getCurrentSelectedEmailsForContext',
+        checkExistenceOnly: false, // Need full info to check for duplicates
+        fromStandaloneWindow: window.opener == null
+      });
+      
+      // Check if we have messages and they're not empty
+      if (selectedEmailsResult && selectedEmailsResult.ok && selectedEmailsResult.messages && selectedEmailsResult.messages.length > 0) {
+        // Count how many new emails we have (not already in context)
+        let newEmailCount = 0;
+        for (const email of selectedEmailsResult.messages) {
+          const exists = this.emailContext.some(e => e.id === email.id);
+          if (!exists) newEmailCount++;
+        }
+        
+        // Only show the option if we have at least one new email
+        hasSelectedEmails = newEmailCount > 0;
+        
+        // Update the text to show how many new emails are available
+        if (hasSelectedEmails) {
+          const addSelectedEmailsText = document.querySelector('#addSelectedEmails > span:nth-child(2)');
+          if (addSelectedEmailsText) {
+            if (newEmailCount === selectedEmailsResult.messages.length) {
+              addSelectedEmailsText.textContent = `Selected Emails (${newEmailCount})`;
+            } else {
+              addSelectedEmailsText.textContent = `Selected Emails (${newEmailCount} new of ${selectedEmailsResult.messages.length})`;
+            }
+          }
+        }
+        
+        Utils.logger.debug('Selected emails check result:', selectedEmailsResult.messages.length, 'New emails:', newEmailCount);
+      } else {
+        hasSelectedEmails = false;
+      }
+    } catch (e) {
+      Utils.logger.error('Error checking for selected emails:', e);
+      hasSelectedEmails = false;
+    }
+    
     const addSelectedEmails = document.getElementById('addSelectedEmails');
-    if (addSelectedEmails) addSelectedEmails.style.display = hasSelectedEmails ? 'block' : 'none';
+    if (addSelectedEmails) {
+      // Only show if there are selected emails with at least one not already in context
+      addSelectedEmails.style.display = hasSelectedEmails ? 'block' : 'none';
+    }
 
-    // Contacts
+    // Contacts - Check if contacts are available
     let hasContacts = false;
     try {
-      const r = await browser.runtime.sendMessage({ type: 'getContacts' });
-      hasContacts = r && r.ok && r.contacts && r.contacts.length > 0;
-    } catch (e) { hasContacts = false; }
+      const contactsResult = await browser.runtime.sendMessage({ type: 'getContacts' });
+      hasContacts = contactsResult && contactsResult.ok && contactsResult.contacts && contactsResult.contacts.length > 0;
+      Utils.logger.debug('Contacts check result:', hasContacts, contactsResult?.contacts?.length || 0);
+    } catch (e) {
+      Utils.logger.error('Error checking for contacts:', e);
+      hasContacts = false;
+    }
+    
     const addContacts = document.getElementById('addContacts');
-    if (addContacts) addContacts.style.display = hasContacts ? 'block' : 'none';
+    if (addContacts) {
+      addContacts.style.display = hasContacts ? 'block' : 'none';
+    }
+    
+    // Email browser option - Always show this
+    const browseEmails = document.getElementById('browseEmails');
+    if (browseEmails) {
+      browseEmails.style.display = 'block';
+    }
+    
+    // Always have at least the email browser option
+    // So we don't need to show a "No options" message
+    // But we'll still track if we have any dynamic options for debugging
+    let hasAnyDynamicOption = hasSelection || hasCurrentEmail || hasSelectedEmails || hasContacts;
+    Utils.logger.debug('Dynamic context options available:', hasAnyDynamicOption);
   },
 
   // Update context indicator UI and render pills
   updateContextUI: function() {
-    // Just render inline context pills (no "No context" text needed)
+    // First sort emails to make sure primary emails come first
+    if (this.emailContext.length > 0) {
+      this.emailContext.sort((a, b) => {
+        // Primary emails first
+        if (a.isPrimary && !b.isPrimary) return -1;
+        if (!a.isPrimary && b.isPrimary) return 1;
+        // Then by date (newer first)
+        return new Date(b.date) - new Date(a.date);
+      });
+      
+      // Log email context status with body info
+      this.emailContext.forEach((email, idx) => {
+        Utils.logger.debug(`Email ${idx + 1}: ${email.subject} - Body length: ${email.body ? email.body.length : 0}`);
+      });
+    }
+    
+    // Then render inline context pills (no "No context" text needed)
     this.renderContextPillsInline();
   },
 
@@ -258,7 +418,10 @@ const ContextManager = {
   updateSelectedEmailsVisibility: async function() {
     try {
       Utils.logger.debug('Checking for selected emails...');
-      const result = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
+      const result = await browser.runtime.sendMessage({ 
+        type: 'getCurrentSelectedEmailsForContext',
+        fromStandaloneWindow: window.opener == null
+      });
       
       if (result && result.ok && result.messages && result.messages.length > 0) {
         Utils.logger.debug('Found selected emails:', result.messages.length);
@@ -277,33 +440,74 @@ const ContextManager = {
     }
   },
 
-  // Add current email to context
+  // Add current email to context - works in both popup and standalone window
   addCurrentEmail: async function() {
     try {
       Utils.logger.debug('Adding current email to context');
-      const r = await browser.runtime.sendMessage({ type: 'getDisplayedMessage' });
+      // For standalone window, we need to get fresh context from Thunderbird
+      // This ensures we get the most current email being viewed, not just what was viewed when the window opened
+      const currentEmailResult = await browser.runtime.sendMessage({ 
+        type: 'getCurrentDisplayedEmailForContext', 
+        fromStandaloneWindow: window.opener == null 
+      });
       
-      if (r.ok) {
-        const m = r.message;
-        // Check if already in context
-        const exists = this.emailContext.some(e => e.id === m.id);
+      if (currentEmailResult && currentEmailResult.ok && currentEmailResult.message) {
+        const m = currentEmailResult.message;
         
-        if (!exists) {
-          this.emailContext.push({
-            id: m.id,
-            subject: m.subject,
-            author: m.author,
-            date: m.date,
-            body: m.parts?.map(p => p.body || '').join('\n') || ''
-          });
+        // Use body provided directly by background script, or extract from parts if not available
+        let bodyContent = m.body || '';
+        
+        // If no body was provided directly, try to extract from parts as a fallback
+        if (!bodyContent && m.parts && Array.isArray(m.parts)) {
+          Utils.logger.debug('Current email has parts array, length:', m.parts.length);
+          bodyContent = m.parts
+            .filter(p => p.body && (
+              p.contentType === 'text/plain' || 
+              p.contentType === 'text/html'
+            ))
+            .map(p => p.body || '')
+            .join('\n\n') || '';
+        }
+        
+        Utils.logger.debug('Current email body length:', bodyContent.length);
+        if (bodyContent.length > 0) {
+          Utils.logger.debug('Body preview:', bodyContent.substring(0, 50) + '...');
+        } else {
+          Utils.logger.warn('Current email has empty body');
+        }
+        
+        const emailObj = {
+          id: m.id,
+          subject: m.subject,
+          author: m.author,
+          date: m.date,
+          body: bodyContent,
+          isPrimary: true // Mark as primary email since it's the current one
+        };
+        
+        // Use our deduplication method
+        if (this.isItemDuplicate(emailObj, 'email')) {
+          // Find and update as primary if needed
+          const existingIndex = this.emailContext.findIndex(e => e.id === emailObj.id);
+          if (existingIndex >= 0) {
+            this.emailContext[existingIndex].isPrimary = true;
+            
+            // Move to top of the list for better UX
+            const email = this.emailContext.splice(existingIndex, 1)[0];
+            this.emailContext.unshift(email);
+          }
           
+          Utils.logger.warn('Email already in context:', m.subject);
+          // Just log that email is already in context
+          Utils.logger.debug('Email already in context');
+        } else {
+          // Add to top of context for better UX since it's the current email
+          this.emailContext.unshift(emailObj);
           this.updateContextUI();
           Utils.logger.info('Email added to context:', m.subject);
-        } else {
-          Utils.logger.warn('Email already in context:', m.subject);
         }
       } else {
-        Utils.logger.warn('Failed to add email to context:', r.error);
+        Utils.logger.warn('Failed to add email to context:', currentEmailResult ? currentEmailResult.error : 'No response');
       }
     } catch (error) {
       Utils.logger.error('Error adding current email to context:', error);
@@ -314,14 +518,17 @@ const ContextManager = {
   addContacts: async function() {
     try {
       Utils.logger.debug('Adding contacts to context');
-      const r = await browser.runtime.sendMessage({ type: 'getContacts' });
+      const contactsResult = await browser.runtime.sendMessage({ type: 'getContacts' });
       
-      if (r.ok) {
-        this.contactsContext = r.contacts;
+      if (contactsResult.ok) {
+        // Clear existing contacts and add new ones
+        // For contacts, we replace the entire list rather than deduplicating
+        // since the list should be fresh from the address book
+        this.contactsContext = contactsResult.contacts;
         this.updateContextUI();
         Utils.logger.info('Contacts added to context:', this.contactsContext.length);
       } else {
-        Utils.logger.warn('Failed to add contacts to context:', r.error);
+        Utils.logger.warn('Failed to add contacts to context:', contactsResult.error);
       }
     } catch (error) {
       Utils.logger.error('Error adding contacts to context:', error);
@@ -337,7 +544,7 @@ const ContextManager = {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       
       if (!tabs || tabs.length === 0) {
-        UIComponents.addMessageToChat(this.chatMessages, 'system', '❌ No active tab found');
+        Utils.logger.error('No active tab found');
         return;
       }
       
@@ -397,13 +604,20 @@ const ContextManager = {
         
         if (result.success) {
           const selectionData = {
-            id: Date.now(),
+            id: Date.now(), // Unique ID based on timestamp
             text: result.selectedText,
             context: result.contextText,
             source: result.source,
             timestamp: new Date().toISOString()
           };
           
+          // Check if a nearly identical selection already exists
+          if (this.isItemDuplicate(selectionData, 'selection')) {
+            Utils.logger.warn('Similar text selection already exists in context');
+            return;
+          }
+          
+          // Add to context if not a duplicate
           this.textSelectionContext.push(selectionData);
           this.updateContextUI();
           
@@ -419,20 +633,26 @@ const ContextManager = {
     }
   },
 
-  // Add selected emails to context
+  // Add selected emails to context - works in both popup and standalone window
   addSelectedEmails: async function() {
     try {
       Utils.logger.debug('Adding selected emails to context');
       
-      const result = await browser.runtime.sendMessage({ type: 'getSelectedEmails' });
+      // For standalone window, we need to get fresh context from Thunderbird
+      const result = await browser.runtime.sendMessage({ 
+        type: 'getCurrentSelectedEmailsForContext',
+        fromStandaloneWindow: window.opener == null
+      });
       
       if (!result || !result.ok) {
+        Utils.logger.warn('Could not access selected emails');
         return;
       }
       
       const selectedEmails = result.messages || [];
       
       if (selectedEmails.length === 0) {
+        Utils.logger.warn('No emails are currently selected');
         return;
       }
       
@@ -440,41 +660,88 @@ const ContextManager = {
       
       // Get full content for each selected email
       const emailsWithContent = [];
+      let duplicateCount = 0;
+      
       for (const email of selectedEmails) {
         try {
+          // Create email object
+          const emailObj = {
+            id: email.id,
+            subject: email.subject,
+            author: email.author,
+            date: email.date
+          };
+          
+          // Check if already in context using our utility function
+          if (this.isItemDuplicate(emailObj, 'email')) {
+            duplicateCount++;
+            Utils.logger.debug('Skipping duplicate email:', email.subject);
+            continue;
+          }
+          
+          // Get content if not a duplicate
           const contentResult = await browser.runtime.sendMessage({
             type: 'getMessageContent',
             messageId: email.id
           });
           
-          emailsWithContent.push({
-            id: email.id,
-            subject: email.subject,
-            author: email.author,
-            date: email.date,
-            body: contentResult.ok ? contentResult.body : ''
-          });
+          // Add body to the email object with debugging
+          if (contentResult && contentResult.ok) {
+            Utils.logger.debug('Retrieved email body, length:', contentResult.body ? contentResult.body.length : 0);
+            emailObj.body = contentResult.body || '';
+          } else {
+            Utils.logger.warn('Failed to get email content:', email.id, contentResult?.error || 'Unknown error');
+            emailObj.body = '';
+          }
+          
+          // Add to our list of emails to add to context
+          emailsWithContent.push(emailObj);
         } catch (error) {
           Utils.logger.error('Error getting content for email:', email.id, error);
-          // Add email without content
-          emailsWithContent.push({
+          
+          // Create email object without content
+          const emailObj = {
             id: email.id,
             subject: email.subject,
             author: email.author,
             date: email.date,
             body: ''
-          });
+          };
+          
+          // Check if it's a duplicate before adding
+          if (!this.isItemDuplicate(emailObj, 'email')) {
+            emailsWithContent.push(emailObj);
+          } else {
+            duplicateCount++;
+          }
         }
       }
       
-      // Add to context
-      if (this.emailContext.length > 0) {
-        this.emailContext.push(...emailsWithContent);
-      } else {
-        this.emailContext = emailsWithContent;
+      // Show appropriate messages based on results
+      if (emailsWithContent.length === 0) {
+        if (duplicateCount > 0) {
+          const message = duplicateCount === 1 
+            ? '⚠️ Selected email is already in context.' 
+            : `⚠️ All ${duplicateCount} selected emails are already in context.`;
+          
+          Utils.logger.warn(message);
+        } else {
+          Utils.logger.warn('No valid emails to add to context.');
+        }
+        return;
       }
       
+      // Add to context
+      this.emailContext.push(...emailsWithContent);
       this.updateContextUI();
+      
+      // Log the action but don't show UI message
+      let logMessage = `Added ${emailsWithContent.length} email(s) to context.`;
+      if (duplicateCount > 0) {
+        logMessage += ` (${duplicateCount} already in context)`;
+      }
+      
+      Utils.logger.info(logMessage);
       
     } catch (error) {
       Utils.logger.error('Error adding selected emails to context:', error);
@@ -654,21 +921,55 @@ const ContextManager = {
       if (selectedEmails.length === 0) return;
       try {
         // Get full email content for selected emails
+        let addedCount = 0;
+        let updatedCount = 0;
+        let duplicateCount = 0;
+        
         for (const email of selectedEmails) {
           try {
-            const contentResult = await browser.runtime.sendMessage({
-              type: 'getMessageContent',
-              messageId: email.id
-            });
-            const body = contentResult.ok ? contentResult.body : '';
+            // Create the email object
+            const emailObj = {
+              id: email.id,
+              subject: email.subject,
+              author: email.author,
+              date: email.date
+            };
+            
             // Check if already in context
-            const idx = this.emailContext.findIndex(e => e.id === email.id);
-            if (idx !== -1) {
-              // Update body if missing or empty
-              if (!this.emailContext[idx].body) {
-                this.emailContext[idx].body = body;
+            if (this.isItemDuplicate(emailObj, 'email')) {
+              // Email exists - check if we should update body
+              const idx = this.emailContext.findIndex(e => e.id === email.id);
+              if (idx !== -1) {
+                const contentResult = await browser.runtime.sendMessage({
+                  type: 'getMessageContent',
+                  messageId: email.id
+                });
+                const body = contentResult.ok ? contentResult.body : '';
+                
+                // Update body if missing or empty
+                if (!this.emailContext[idx].body && body) {
+                  this.emailContext[idx].body = body;
+                  updatedCount++;
+                } else {
+                  duplicateCount++;
+                }
               }
             } else {
+              // New email - get content and add to context
+              const contentResult = await browser.runtime.sendMessage({
+                type: 'getMessageContent',
+                messageId: email.id
+              });
+              
+              // Process and debug the content retrieval
+              let body = '';
+              if (contentResult && contentResult.ok) {
+                Utils.logger.debug('Email browser: retrieved body, length:', contentResult.body ? contentResult.body.length : 0);
+                body = contentResult.body || '';
+              } else {
+                Utils.logger.warn('Email browser: failed to get content:', email.id, contentResult?.error || 'Unknown error');
+              }
+              
               this.emailContext.push({
                 id: email.id,
                 subject: email.subject,
@@ -676,12 +977,13 @@ const ContextManager = {
                 date: email.date,
                 body
               });
+              addedCount++;
             }
           } catch (error) {
             Utils.logger.error('Error getting content for email:', email.id, error);
-            // Add email without content if not already present
-            const idx = this.emailContext.findIndex(e => e.id === email.id);
-            if (idx === -1) {
+            
+            // Only add if not already in context
+            if (!this.isItemDuplicate({id: email.id}, 'email')) {
               this.emailContext.push({
                 id: email.id,
                 subject: email.subject,
@@ -689,9 +991,32 @@ const ContextManager = {
                 date: email.date,
                 body: ''
               });
+              addedCount++;
+            } else {
+              duplicateCount++;
             }
           }
         }
+        
+        // Show status message if this is the standalone window
+        if (window.opener == null) {
+          let message = '';
+          if (addedCount > 0) {
+            message += `Added ${addedCount} email(s) to context. `;
+          }
+          if (updatedCount > 0) {
+            message += `Updated ${updatedCount} existing email(s). `;
+          }
+          if (duplicateCount > 0) {
+            message += `Skipped ${duplicateCount} duplicate(s).`;
+          }
+          
+          // Log the information but don't show UI message
+          if (message) {
+            Utils.logger.info(message.trim());
+          }
+        }
+        
         this.updateContextUI();
         closeModal();
       } catch (error) {
@@ -718,9 +1043,42 @@ const ContextManager = {
     let contextContent = '';
     
     if (this.emailContext.length > 0) {
+      Utils.logger.debug('Building context with', this.emailContext.length, 'emails');
+      
       contextContent = 'Here are the emails to analyze:\n\n';
+      
       this.emailContext.forEach((email, idx) => {
-        contextContent += `Email ${idx + 1}:\nSubject: ${email.subject}\nFrom: ${email.author}\nDate: ${email.date}\nBody: ${email.body}\n\n`;
+        // Debug email body content in detail
+        const bodyLength = email.body ? email.body.length : 0;
+        const bodyPreview = email.body ? email.body.substring(0, 50) + (email.body.length > 50 ? '...' : '') : '';
+        Utils.logger.debug(`Email ${idx + 1} body length:`, bodyLength, 'Preview:', bodyPreview);
+        
+        // Add additional debug info if body is empty
+        if (!email.body || email.body.length === 0) {
+          Utils.logger.warn(`Email ${idx + 1} (${email.subject}) has empty body. ID: ${email.id}`);
+          
+          // Attempt to fetch body content if missing - this is a fallback mechanism
+          (async () => {
+            try {
+              Utils.logger.debug(`Attempting fallback body fetch for email ID: ${email.id}`);
+              const contentResult = await browser.runtime.sendMessage({
+                type: 'getMessageContent',
+                messageId: email.id
+              });
+              
+              if (contentResult && contentResult.ok && contentResult.body) {
+                Utils.logger.debug(`Fallback successful - retrieved body, length: ${contentResult.body.length}`);
+                email.body = contentResult.body; // Update the email object in place
+              } else {
+                Utils.logger.warn(`Fallback body fetch failed for email ID: ${email.id}`);
+              }
+            } catch (err) {
+              Utils.logger.error(`Error in fallback body fetch for email ID: ${email.id}`, err);
+            }
+          })();
+        }
+        
+        contextContent += `Email ${idx + 1}:\nSubject: ${email.subject}\nFrom: ${email.author}\nDate: ${email.date}\nBody: ${email.body || '[No body content available]'}\n\n`;
       });
       contextContent += '--- End of emails ---\n\n';
     }

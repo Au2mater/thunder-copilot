@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thunder Copilot Debug</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      background-color: #f9f9f9;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .control-panel {
+      display: flex;
+      gap: 10px;
+    }
+    
+    button {
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    button:hover {
+      background-color: #0069b9;
+    }
+    
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .section {
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: white;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background-color: #f0f0f0;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+    
+    .section-header:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .count-badge {
+      background-color: #0078d4;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 10px;
+      font-size: 0.8rem;
+    }
+    
+    .section-content {
+      padding: 15px;
+      overflow: auto;
+      max-height: 500px;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    
+    #lastRefreshTime {
+      font-size: 0.9rem;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .test-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .test-buttons button {
+      background-color: #5cb85c;
+    }
+    
+    .test-buttons button:hover {
+      background-color: #4cae4c;
+    }
+    
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .stat-section {
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      border: 1px solid #e1e5e9;
+    }
+    
+    .stat-section h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #0078d4;
+      font-size: 16px;
+    }
+    
+    .stat-section ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    
+    #propertyStatsOutput, #userTabsOutput {
+      background-color: white;
+      color: #333;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    .tab-window {
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      border: 1px solid #e1e5e9;
+    }
+    
+    .tab-window h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #0078d4;
+    }
+    
+    .tab-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+    }
+    
+    .tab-table th, .tab-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab-table th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+    
+    .tab-table tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+    
+    .tab-table tr:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .tab-list {
+      margin: 0;
+      padding: 0 0 0 20px;
+      list-style-type: none;
+    }
+    
+    .tab-list li {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .tab-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .tab-window h4 {
+      margin-bottom: 5px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #0078d4;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Thunder Copilot Debug</h1>
+    <div class="control-panel">
+      <button id="refreshBtn">Refresh All Data</button>
+      <button id="copyLogBtn">Copy Debug Log</button>
+    </div>
+  </header>
+  
+  <div id="lastRefreshTime">Last refreshed: -</div>
+  
+  <div class="section">
+    <div id="toggleWindows" class="section-header">
+      <h2>Windows <span id="windowCount" class="count-badge">0</span></h2>
+    </div>
+    <pre id="windowsOutput" class="section-content">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <div id="toggleTabs" class="section-header">
+      <h2>Tabs <span id="tabCount" class="count-badge">0</span></h2>
+    </div>
+    <pre id="tabsOutput" class="section-content">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <div id="toggleMailTabs" class="section-header">
+      <h2>Mail Tabs <span id="mailTabCount" class="count-badge">0</span></h2>
+    </div>
+    <pre id="mailTabsOutput" class="section-content">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <div id="toggleDisplayedMessages" class="section-header">
+      <h2>Currently Visible Emails <span id="messageDisplayCount" class="count-badge">0</span></h2>
+    </div>
+    <pre id="displayedMessagesOutput" class="section-content">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <div id="toggleSelectedMessages" class="section-header">
+      <h2>Selected Messages <span id="selectedMessagesCount" class="count-badge">0</span></h2>
+    </div>
+    <pre id="selectedMessagesOutput" class="section-content">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <div id="togglePropertyStats" class="section-header">
+      <h2>Property Statistics</h2>
+    </div>
+    <div class="section-content" id="propertyStatsOutput">
+      Loading statistics...
+    </div>
+  </div>
+  
+  <div class="section">
+    <div id="toggleUserTabs" class="section-header">
+      <h2>User-Relevant Tabs <span id="userTabCount" class="count-badge">0</span></h2>
+    </div>
+    <div class="section-content" id="userTabsOutput">
+      Loading user-relevant tabs...
+    </div>
+  </div>
+
+  <div class="section">
+    <div id="toggleBackgroundTests" class="section-header">
+      <h2>Background API Tests</h2>
+    </div>
+    <div class="section-content">
+      <div class="test-buttons">
+        <button id="testGetCurrentEmailBtn">Test Get Current Email</button>
+        <button id="testGetSelectedEmailsBtn">Test Get Selected Emails</button>
+      </div>
+      <pre id="backgroundTestOutput">Click a test button to run</pre>
+    </div>
+  </div>
+  
+  <script src="debug.js"></script>
+</body>
+</html>

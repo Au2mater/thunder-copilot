@@ -188,6 +188,23 @@
       🔒 Your API key is stored locally and never transmitted except to OpenAI's official API endpoints.
     </div>
   </div>
+  
+  <div class="setting-group">
+    <label for="debugModeToggle">Developer Options</label>
+    <div class="description">
+      These options are intended for developers and debugging purposes.
+    </div>
+    
+    <div style="display: flex; align-items: center; margin-bottom: 16px;">
+      <input type="checkbox" id="debugModeToggle" style="margin-right: 8px;">
+      <span>Enable Debug Mode</span>
+    </div>
+    
+    <button id="openDebugBtn" style="background-color: #f44336;">🔍 Open Debug Page</button>
+    <div class="description" style="margin-top: 8px; font-size: 12px;">
+      The debug page shows information about windows, tabs, displayed emails, and selected emails.
+    </div>
+  </div>
 
   <script src="options.js"></script>
 </body>
