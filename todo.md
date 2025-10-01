@@ -11,11 +11,6 @@
 - [ ] **Enhanced contacts integration** - Improve contact matching and suggestion algorithms
 
 ## UI/UX Improvements
-- [ ] Only show context that is applicable
-    - no "Selected Text" if no text is selected
-    - no "Current Email" if no email is open
-    - no "Selected Email" if no email is selected
-    - no "Contacts" if address book is empty
 - [ ] **Pinned sidebar option** - Allow users to pin the sidebar for persistent access
     - research if Thunderbird supports pinned sidebars or other panes that allow an always-visible but hidable / collapsible sidebar / panel
 - [ ] **Match thunderbird theme** - Ensure the UI matches Thunderbird's chosen theme and dark/light mode when it comes to just colors
@@ -48,10 +43,15 @@
 8. [ ] **Add One Task** - Limited native API support
 9. [ ] **Add Multiple Tasks** - Extension of single task
 
+---
 # In progress
+## UI/UX Improvements
 
+
+---
 # Done
 ## UI/UX Improvements
+- [x] Only show context that is applicable
 - [x] **Context management UI** - Improve context addition/removal interface
     - currently a static message is added to the chat when context is added
     - no obvious way to remove context once added

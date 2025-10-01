@@ -202,6 +202,7 @@ quickActionBtns.forEach(btn => {
 });
 
 // Toggle context dropdown
+
 addContextBtn.addEventListener('click', async (e) => {
   e.stopPropagation();
   const isVisible = contextDropdown.style.display === 'block';
@@ -209,23 +210,21 @@ addContextBtn.addEventListener('click', async (e) => {
   if (isVisible) {
     contextDropdown.style.display = 'none';
   } else {
-    // Update selected emails visibility before showing dropdown
+    // Update selected emails visibility and context options before showing dropdown
     if (typeof ContextManager !== 'undefined') {
       try {
         await ContextManager.updateSelectedEmailsVisibility();
+        await ContextManager.updateContextDropdownVisibility();
       } catch (error) {
-        console.error('Error updating selected emails visibility:', error);
+        console.error('Error updating context dropdown visibility:', error);
       }
     }
-
     // Show dropdown and calculate positioning
     contextDropdown.style.display = 'block';
-
     // Check if dropdown would be clipped at bottom
     const dropdownRect = contextDropdown.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const spaceBelow = viewportHeight - dropdownRect.bottom;
-
     // If not enough space below (less than 20px margin), show above
     if (spaceBelow < 20) {
       contextDropdown.classList.add('dropdown-up');
